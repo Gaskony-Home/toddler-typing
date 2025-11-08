@@ -6,24 +6,29 @@ This module provides an interactive activity for learning colors and shapes.
 
 import pygame
 import random
-from typing import Tuple, List
+from typing import Tuple, List, Callable
 
 from ..config.settings import Settings
+from ..ui.button import Button
 
 
 class ColorsShapesActivity:
     """Interactive colors and shapes learning activity."""
 
-    def __init__(self, screen: pygame.Surface, settings: Settings) -> None:
+    def __init__(
+        self, screen: pygame.Surface, settings: Settings, switch_state: Callable
+    ) -> None:
         """
         Initialize the colors and shapes activity.
 
         Args:
             screen: The pygame surface to draw on.
             settings: Application settings.
+            switch_state: Callback function to switch application state.
         """
         self.screen = screen
         self.settings = settings
+        self.switch_state = switch_state
         self.font = pygame.font.Font(None, 72)
 
         # Define shapes and colors
@@ -38,7 +43,31 @@ class ColorsShapesActivity:
         self.current_shape: str = ""
         self.current_color_name: str = ""
         self.current_color: Tuple[int, int, int] = (0, 0, 0)
+
+        # Back button
+        self.back_button = Button(
+            20, 20, 150, 60, "Back", (100, 100, 100), on_click=self._go_back
+        )
+
+        # Next button (large and colorful for toddlers)
+        self.next_button = Button(
+            self.settings.screen_width // 2 - 100,
+            self.settings.screen_height - 100,
+            200,
+            70,
+            "Next",
+            self.settings.colors["secondary"],
+            font_size=42,
+            on_click=self.next_shape,
+        )
+
         self.next_shape()
+
+    def _go_back(self) -> None:
+        """Return to main menu."""
+        from ..main import AppState
+
+        self.switch_state(AppState.MENU)
 
     def next_shape(self) -> None:
         """Select a random shape and color to display."""
@@ -53,9 +82,18 @@ class ColorsShapesActivity:
         Args:
             event: The pygame event to handle.
         """
+        self.back_button.handle_event(event)
+        self.next_button.handle_event(event)
+
         if event.type == pygame.MOUSEBUTTONDOWN:
-            # Move to next shape on click
-            self.next_shape()
+            # Also allow clicking anywhere on the shape area to advance
+            if event.button == 1:
+                # Check if click is not on a button
+                if (
+                    not self.back_button.rect.collidepoint(event.pos)
+                    and not self.next_button.rect.collidepoint(event.pos)
+                ):
+                    self.next_shape()
 
     def update(self) -> None:
         """Update activity state."""
@@ -87,16 +125,9 @@ class ColorsShapesActivity:
         # Draw labels
         shape_text = f"{self.current_color_name.capitalize()} {self.current_shape.capitalize()}"
         text_surface = self.font.render(shape_text, True, self.settings.colors["text"])
-        text_rect = text_surface.get_rect(center=(center_x, 100))
+        text_rect = text_surface.get_rect(center=(center_x, 150))
         self.screen.blit(text_surface, text_rect)
 
-        # Draw instruction
-        instruction = "Click to see another shape!"
-        instruction_font = pygame.font.Font(None, 36)
-        instruction_surface = instruction_font.render(
-            instruction, True, self.settings.colors["text"]
-        )
-        instruction_rect = instruction_surface.get_rect(
-            center=(center_x, self.settings.screen_height - 50)
-        )
-        self.screen.blit(instruction_surface, instruction_rect)
+        # Draw buttons
+        self.back_button.draw(self.screen)
+        self.next_button.draw(self.screen)

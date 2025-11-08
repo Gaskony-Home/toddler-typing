@@ -6,7 +6,7 @@ simple color selection and brush sizes.
 """
 
 import pygame
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Callable
 
 from ..config.settings import Settings
 from ..ui.button import Button
@@ -15,16 +15,20 @@ from ..ui.button import Button
 class DrawingCanvas:
     """Simple drawing canvas for children."""
 
-    def __init__(self, screen: pygame.Surface, settings: Settings) -> None:
+    def __init__(
+        self, screen: pygame.Surface, settings: Settings, switch_state: Callable
+    ) -> None:
         """
         Initialize the drawing canvas.
 
         Args:
             screen: The pygame surface to draw on.
             settings: Application settings.
+            switch_state: Callback function to switch application state.
         """
         self.screen = screen
         self.settings = settings
+        self.switch_state = switch_state
 
         # Drawing state
         self.drawing = False
@@ -36,6 +40,17 @@ class DrawingCanvas:
         self.canvas = pygame.Surface((self.settings.screen_width, self.settings.screen_height))
         self.canvas.fill((255, 255, 255))  # White canvas
 
+        # Back button
+        self.back_button = Button(
+            self.settings.screen_width - 180,
+            20,
+            150,
+            60,
+            "Back",
+            (100, 100, 100),
+            on_click=self._go_back,
+        )
+
         # Create color palette buttons
         self.color_buttons: List[Button] = []
         self._create_color_palette()
@@ -46,14 +61,20 @@ class DrawingCanvas:
 
         # Clear button
         self.clear_button = Button(
-            self.settings.screen_width - 150,
+            self.settings.screen_width - 180,
             self.settings.screen_height - 80,
-            120,
+            150,
             60,
             "Clear",
             (200, 50, 50),
             on_click=self._clear_canvas,
         )
+
+    def _go_back(self) -> None:
+        """Return to main menu."""
+        from ..main import AppState
+
+        self.switch_state(AppState.MENU)
 
     def _create_color_palette(self) -> None:
         """Create color selection buttons."""
@@ -123,7 +144,7 @@ class DrawingCanvas:
             event: The pygame event to handle.
         """
         # Handle UI buttons
-        for button in self.color_buttons + self.size_buttons + [self.clear_button]:
+        for button in self.color_buttons + self.size_buttons + [self.clear_button, self.back_button]:
             button.handle_event(event)
 
         # Handle drawing
@@ -170,10 +191,4 @@ class DrawingCanvas:
             button.draw(self.screen)
 
         self.clear_button.draw(self.screen)
-
-        # Draw current color indicator
-        indicator_rect = pygame.Rect(
-            self.settings.screen_width - 100, 20, 80, 80
-        )
-        pygame.draw.rect(self.screen, self.current_color, indicator_rect, border_radius=10)
-        pygame.draw.rect(self.screen, (0, 0, 0), indicator_rect, 3, border_radius=10)
+        self.back_button.draw(self.screen)
