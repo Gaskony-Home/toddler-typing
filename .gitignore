@@ -30,6 +30,10 @@ MANIFEST
 *.manifest
 *.spec
 
+# Portable distribution
+releases/
+dist/
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt

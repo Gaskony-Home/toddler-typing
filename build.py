@@ -114,59 +114,152 @@ def create_distribution_package():
         shutil.copy(readme_src, dist_dir / "README.md")
         print("  Copied README.md")
 
-    # Copy configuration example
-    config_example = dist_dir / "config.example.json"
-    with open(config_example, "w") as f:
-        f.write("""{
-  "fullscreen": true,
-  "enable_keyboard_lock": true,
-  "exit_combination": ["ctrl", "shift", "esc"],
-  "enable_letters": true,
-  "enable_numbers": true,
-  "enable_colors": true,
-  "enable_shapes": true,
-  "enable_sounds": true
-}
+    # Copy USAGE guide
+    usage_src = Path("USAGE.md")
+    if usage_src.exists():
+        shutil.copy(usage_src, dist_dir / "USAGE.md")
+        print("  Copied USAGE.md")
+
+    # Copy configuration files
+    for config_file in ["config.dev.json", "config.production.json", "config.example.json"]:
+        config_src = Path(config_file)
+        if config_src.exists():
+            shutil.copy(config_src, dist_dir / config_file)
+            print(f"  Copied {config_file}")
+
+    # Create default config.json (development mode for first run)
+    default_config = dist_dir / "config.json"
+    shutil.copy(Path("config.dev.json"), default_config)
+    print("  Created config.json (development mode)")
+
+    # Create Windows batch file for easy launching
+    batch_file = dist_dir / "START_TODDLER_TYPING.bat"
+    with open(batch_file, "w") as f:
+        f.write("""@echo off
+REM Toddler Typing Launcher
+REM Double-click this file to start the application
+
+echo Starting Toddler Typing...
+start "" "toddler-typing.exe"
 """)
-    print("  Created config.example.json")
+    print("  Created START_TODDLER_TYPING.bat")
 
     # Create quick start guide
     quick_start = dist_dir / "QUICK_START.txt"
     with open(quick_start, "w") as f:
-        f.write("""TODDLER TYPING - QUICK START GUIDE
-====================================
+        f.write("""╔════════════════════════════════════════════════════════════╗
+║         TODDLER TYPING - QUICK START GUIDE                ║
+╚════════════════════════════════════════════════════════════╝
 
-RUNNING THE PROGRAM:
-1. Double-click 'toddler-typing.exe'
-2. The program will start in fullscreen mode
+🎮 RUNNING THE PROGRAM:
+   Option 1: Double-click 'toddler-typing.exe'
+   Option 2: Double-click 'START_TODDLER_TYPING.bat'
 
-EXITING THE PROGRAM:
-Press Ctrl + Shift + Esc together to exit
+🚪 EXITING THE PROGRAM:
+   Press Ctrl + Shift + Esc together (all three keys at once)
 
-CUSTOMIZATION:
-1. Copy 'config.example.json' to 'config.json'
-2. Edit 'config.json' with your preferred settings
-3. Restart the program
+⚙️ CONFIGURATION MODES:
 
-TROUBLESHOOTING:
-- If the program doesn't start, ensure you're running Windows 7 or later
-- For keyboard lock issues, try running as Administrator
-- Check README.md for full documentation
+   DEVELOPMENT MODE (Current Default):
+   - Windowed mode (not fullscreen)
+   - Easy exit with ESC key
+   - No keyboard lock
+   - Good for testing and parent use
 
-SAFETY FEATURES:
-- Blocks Windows key, Alt+Tab, and system shortcuts
-- Fullscreen mode prevents window switching
-- Only exits with Ctrl+Shift+Esc
+   To switch: Copy 'config.dev.json' to 'config.json'
 
-Enjoy!
+   PRODUCTION MODE (For Toddler Use):
+   - Fullscreen mode
+   - Keyboard lock enabled (blocks Windows key, Alt+Tab, etc.)
+   - Only exits with Ctrl+Shift+Esc
+
+   To switch: Copy 'config.production.json' to 'config.json'
+
+📝 CUSTOMIZATION:
+   1. Edit 'config.json' with Notepad
+   2. Adjust settings as needed
+   3. Save and restart the program
+
+🎯 ACTIVITIES:
+   • Letters - Press the letter shown on screen
+   • Numbers - Press the number shown on screen
+   • Drawing - Click and drag to draw, click colors to change
+   • Colors & Shapes - Click to see different colored shapes
+
+🔧 TROUBLESHOOTING:
+   • Won't start? Make sure Windows 7 or later
+   • Keyboard lock issues? Try running as Administrator
+   • See USAGE.md for detailed help
+
+🛡️ SAFETY FEATURES:
+   • Blocks Windows key and system shortcuts (when enabled)
+   • Fullscreen prevents window switching (when enabled)
+   • Secure exit combination (Ctrl+Shift+Esc)
+
+📚 MORE INFO:
+   • Full guide: See USAGE.md
+   • Configuration: See config.example.json
+   • General info: See README.md
+
+Enjoy! 🎨🔤🔢
 """)
     print("  Created QUICK_START.txt")
 
+    # Create portable README
+    portable_readme = dist_dir / "PORTABLE_README.txt"
+    with open(portable_readme, "w") as f:
+        f.write("""TODDLER TYPING - PORTABLE VERSION
+==================================
+
+This is a FULLY PORTABLE version of Toddler Typing.
+
+✅ NO PYTHON INSTALLATION REQUIRED
+✅ NO DEPENDENCIES TO INSTALL
+✅ RUNS ON ANY WINDOWS COMPUTER
+✅ JUST EXTRACT AND RUN
+
+WHAT'S IN THIS FOLDER:
+  toddler-typing.exe      - The main application
+  START_TODDLER_TYPING.bat - Easy launcher (double-click this!)
+  config.json             - Current settings (dev mode by default)
+  config.dev.json         - Development mode settings
+  config.production.json  - Production mode settings
+  config.example.json     - Configuration template
+  QUICK_START.txt         - Quick start guide (READ THIS FIRST!)
+  USAGE.md                - Detailed usage guide
+  README.md               - Project information
+  _internal/              - Required libraries (don't delete!)
+
+QUICK START:
+  1. Extract this entire folder anywhere on your computer
+  2. Double-click 'START_TODDLER_TYPING.bat' or 'toddler-typing.exe'
+  3. Press ESC to exit (in dev mode) or Ctrl+Shift+Esc (in production mode)
+
+SHARING THIS:
+  • Zip the ENTIRE folder
+  • Share the zip file
+  • Recipient extracts and runs - that's it!
+
+SYSTEM REQUIREMENTS:
+  • Windows 7 or later
+  • No other requirements!
+
+See QUICK_START.txt for more details.
+""")
+    print("  Created PORTABLE_README.txt")
+
     print("\n✓ Distribution package created in dist/toddler-typing/")
+    print("\n" + "=" * 60)
+    print("PORTABLE DISTRIBUTION READY!")
+    print("=" * 60)
+    print("\nFolder location: dist/toddler-typing/")
     print("\nTo distribute:")
     print("  1. Zip the entire 'dist/toddler-typing' folder")
     print("  2. Share the zip file")
-    print("  3. Recipients can extract and run toddler-typing.exe")
+    print("  3. Recipients extract and double-click 'toddler-typing.exe'")
+    print("\nTo test now:")
+    print("  cd dist/toddler-typing")
+    print("  toddler-typing.exe")
 
     return True
 
