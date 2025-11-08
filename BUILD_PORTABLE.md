@@ -197,17 +197,103 @@ Some antivirus software flags PyInstaller executables:
 - You can add an exception in your antivirus
 - Or sign the executable (advanced)
 
-## Advanced: Code Signing (Optional)
+## Security Considerations
 
-To prevent antivirus false positives and show your name:
+### Before Building
 
-1. Get a code signing certificate
-2. Sign the executable:
-   ```bash
-   signtool sign /f certificate.pfx /p password /t http://timestamp.server toddler-typing.exe
-   ```
+1. **Verify Source Code**: Ensure you're building from a trusted source
+2. **Check Dependencies**: Review `requirements.txt` for any unexpected packages
+3. **Scan Build Environment**: Run antivirus scan on build machine
+4. **Update Dependencies**: Keep all packages up to date
 
-This is optional but recommended for public distribution.
+### Checksum Generation
+
+Always generate checksums for distribution:
+
+```python
+# Add to build.py or make-portable.py
+import hashlib
+
+def calculate_checksum(filepath):
+    """Calculate SHA256 checksum of a file."""
+    sha256_hash = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    return sha256_hash.hexdigest()
+
+# After building
+exe_path = "dist/toddler-typing/toddler-typing.exe"
+checksum = calculate_checksum(exe_path)
+print(f"SHA256: {checksum}")
+
+# Save to file
+with open("dist/toddler-typing/CHECKSUMS.txt", "w") as f:
+    f.write(f"SHA256 Checksums for Toddler Typing\n")
+    f.write(f"====================================\n\n")
+    f.write(f"toddler-typing.exe: {checksum}\n")
+    f.write(f"\nVerify these checksums match before running.\n")
+```
+
+Include CHECKSUMS.txt in your distribution.
+
+## Code Signing (Recommended for Public Distribution)
+
+Code signing prevents antivirus false positives and verifies authenticity.
+
+### Getting a Code Signing Certificate
+
+1. **Purchase from Certificate Authority**:
+   - DigiCert
+   - Sectigo (formerly Comodo)
+   - GlobalSign
+
+2. **Expected Cost**: $100-$400 per year
+
+3. **Requirements**:
+   - Valid business or personal identity
+   - Verification process (can take days)
+
+### Signing the Executable
+
+**Using SignTool (Windows SDK):**
+
+```bash
+# Install Windows SDK first
+# Then run:
+signtool sign /fd SHA256 ^
+  /tr http://timestamp.digicert.com ^
+  /td SHA256 ^
+  /f "path\to\certificate.pfx" ^
+  /p "certificate_password" ^
+  "dist\toddler-typing\toddler-typing.exe"
+```
+
+**Best Practices:**
+- Store certificate password in environment variable, not in scripts
+- Use timestamp server to ensure signature remains valid after certificate expires
+- Verify signature after signing: `signtool verify /pa toddler-typing.exe`
+
+### Alternative: Self-Signed Certificate (Testing Only)
+
+For testing (not recommended for distribution):
+
+```powershell
+# Create self-signed certificate (PowerShell as Administrator)
+$cert = New-SelfSignedCertificate -DnsName "toddler-typing.local" `
+  -Type CodeSigning `
+  -CertStoreLocation Cert:\CurrentUser\My
+
+# Export certificate
+Export-Certificate -Cert $cert -FilePath "toddler-typing-cert.cer"
+
+# Sign executable
+signtool sign /fd SHA256 /a "dist\toddler-typing\toddler-typing.exe"
+```
+
+**Warning**: Self-signed certificates will still trigger security warnings and are only useful for testing.
+
+This is optional but **strongly recommended** for public distribution.
 
 ## Automated Build Script (Future Enhancement)
 
@@ -222,12 +308,37 @@ Coming soon: `make-portable.sh` / `make-portable.bat` that:
 Before distributing:
 
 1. ✅ Test on the build machine
-2. ✅ Test on a clean Windows VM (no Python)
-3. ✅ Test all configuration modes
-4. ✅ Test all activities work
-5. ✅ Verify exit combinations work
-6. ✅ Check file size is reasonable
-7. ✅ Scan with antivirus
+2. ✅ Test on a clean Windows VM (no Python installed)
+3. ✅ Test all configuration modes (dev and production)
+4. ✅ Test all activities work correctly
+5. ✅ Verify exit combinations work (especially Ctrl+Shift+Esc)
+6. ✅ Test keyboard lock functionality
+7. ✅ Check file size is reasonable (25-35 MB expected)
+8. ✅ Scan with multiple antivirus solutions
+9. ✅ Verify CHECKSUMS.txt is included
+10. ✅ Test on different Windows versions (10, 11)
+11. ✅ Verify all documentation is included
+12. ✅ Test from a non-administrator account
+
+### Security Testing
+
+Additional security tests before distribution:
+
+1. **Antivirus Scanning**:
+   - Scan with Windows Defender
+   - Test with VirusTotal (if comfortable uploading)
+   - Check for false positives
+
+2. **Integrity Testing**:
+   - Verify checksums match
+   - Test after extraction from ZIP
+   - Ensure no files are corrupted
+
+3. **Functionality Testing**:
+   - Test keyboard lock blocks system keys
+   - Verify exit combination works reliably
+   - Test fullscreen mode isolation
+   - Ensure no crashes with malformed configs
 
 ## Size Optimization
 

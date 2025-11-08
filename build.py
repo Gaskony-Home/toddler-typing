@@ -63,38 +63,63 @@ def create_executable():
     """Create the executable using PyInstaller."""
     print("\nBuilding executable...")
 
-    # Get the main script path
-    main_script = "src/toddler_typing/main.py"
+    # Get absolute paths for security
+    project_root = Path(__file__).parent.resolve()
+    main_script = project_root / "src" / "toddler_typing" / "main.py"
+    assets_dir = project_root / "src" / "toddler_typing" / "assets"
+    icon_path = assets_dir / "images" / "icon.ico"
 
-    # PyInstaller command
+    # Validate paths exist
+    if not main_script.exists():
+        print(f"  ERROR: Main script not found: {main_script}")
+        return False
+
+    if not assets_dir.exists():
+        print(f"  ERROR: Assets directory not found: {assets_dir}")
+        return False
+
+    # Build command with validated absolute paths
+    # Use python -m pyinstaller to avoid PATH issues
     cmd = [
-        "pyinstaller",
+        sys.executable,  # Use the same Python interpreter
+        "-m",
+        "PyInstaller",
         "--name=toddler-typing",
         "--onedir",  # Create a directory with dependencies
         "--windowed",  # No console window
         "--clean",
-        f"--add-data=src/toddler_typing/assets{os.pathsep}assets",
+        f"--add-data={assets_dir}{os.pathsep}assets",
         "--hidden-import=pygame",
         "--hidden-import=pynput",
         "--hidden-import=pynput.keyboard",
         "--hidden-import=pynput.keyboard._win32",
         "--collect-all=pygame",
-        main_script,
+        str(main_script),  # Use string of Path object for safety
     ]
 
     # Add icon if it exists
-    icon_path = Path("src/toddler_typing/assets/images/icon.ico")
     if icon_path.exists():
         cmd.extend(["--icon", str(icon_path)])
 
-    print(f"  Running: {' '.join(cmd)}")
+    print(f"  Running PyInstaller with validated paths")
 
     try:
-        subprocess.run(cmd, check=True)
-        print("\n✓ Build successful!")
+        # IMPORTANT: Never use shell=True
+        result = subprocess.run(
+            cmd,
+            check=True,
+            cwd=str(project_root),  # Explicit working directory
+            capture_output=True,
+            text=True
+        )
+        print("\n[SUCCESS] Build successful!")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"\n✗ Build failed with error: {e}")
+        print(f"\n[FAILED] Build failed")
+        if e.stdout:
+            print(f"  Output: {e.stdout[:500]}")  # Limit output
+        if e.stderr:
+            print(f"  Error: {e.stderr[:500]}")  # Limit output
         return False
 
 
@@ -146,19 +171,19 @@ start "" "toddler-typing.exe"
 
     # Create quick start guide
     quick_start = dist_dir / "QUICK_START.txt"
-    with open(quick_start, "w") as f:
-        f.write("""╔════════════════════════════════════════════════════════════╗
-║         TODDLER TYPING - QUICK START GUIDE                ║
-╚════════════════════════════════════════════════════════════╝
+    with open(quick_start, "w", encoding="utf-8") as f:
+        f.write("""============================================================
+         TODDLER TYPING - QUICK START GUIDE
+============================================================
 
-🎮 RUNNING THE PROGRAM:
+RUNNING THE PROGRAM:
    Option 1: Double-click 'toddler-typing.exe'
    Option 2: Double-click 'START_TODDLER_TYPING.bat'
 
-🚪 EXITING THE PROGRAM:
+EXITING THE PROGRAM:
    Press Ctrl + Shift + Esc together (all three keys at once)
 
-⚙️ CONFIGURATION MODES:
+CONFIGURATION MODES:
 
    DEVELOPMENT MODE (Current Default):
    - Windowed mode (not fullscreen)
@@ -175,48 +200,48 @@ start "" "toddler-typing.exe"
 
    To switch: Copy 'config.production.json' to 'config.json'
 
-📝 CUSTOMIZATION:
+CUSTOMIZATION:
    1. Edit 'config.json' with Notepad
    2. Adjust settings as needed
    3. Save and restart the program
 
-🎯 ACTIVITIES:
-   • Letters - Press the letter shown on screen
-   • Numbers - Press the number shown on screen
-   • Drawing - Click and drag to draw, click colors to change
-   • Colors & Shapes - Click to see different colored shapes
+ACTIVITIES:
+   - Letters - Press the letter shown on screen
+   - Numbers - Press the number shown on screen
+   - Drawing - Click and drag to draw, click colors to change
+   - Colors & Shapes - Click to see different colored shapes
 
-🔧 TROUBLESHOOTING:
-   • Won't start? Make sure Windows 7 or later
-   • Keyboard lock issues? Try running as Administrator
-   • See USAGE.md for detailed help
+TROUBLESHOOTING:
+   - Won't start? Make sure Windows 7 or later
+   - Keyboard lock issues? Try running as Administrator
+   - See USAGE.md for detailed help
 
-🛡️ SAFETY FEATURES:
-   • Blocks Windows key and system shortcuts (when enabled)
-   • Fullscreen prevents window switching (when enabled)
-   • Secure exit combination (Ctrl+Shift+Esc)
+SAFETY FEATURES:
+   - Blocks Windows key and system shortcuts (when enabled)
+   - Fullscreen prevents window switching (when enabled)
+   - Secure exit combination (Ctrl+Shift+Esc)
 
-📚 MORE INFO:
-   • Full guide: See USAGE.md
-   • Configuration: See config.example.json
-   • General info: See README.md
+MORE INFO:
+   - Full guide: See USAGE.md
+   - Configuration: See config.example.json
+   - General info: See README.md
 
-Enjoy! 🎨🔤🔢
+Enjoy!
 """)
     print("  Created QUICK_START.txt")
 
     # Create portable README
     portable_readme = dist_dir / "PORTABLE_README.txt"
-    with open(portable_readme, "w") as f:
+    with open(portable_readme, "w", encoding="utf-8") as f:
         f.write("""TODDLER TYPING - PORTABLE VERSION
 ==================================
 
 This is a FULLY PORTABLE version of Toddler Typing.
 
-✅ NO PYTHON INSTALLATION REQUIRED
-✅ NO DEPENDENCIES TO INSTALL
-✅ RUNS ON ANY WINDOWS COMPUTER
-✅ JUST EXTRACT AND RUN
+[+] NO PYTHON INSTALLATION REQUIRED
+[+] NO DEPENDENCIES TO INSTALL
+[+] RUNS ON ANY WINDOWS COMPUTER
+[+] JUST EXTRACT AND RUN
 
 WHAT'S IN THIS FOLDER:
   toddler-typing.exe      - The main application
@@ -248,7 +273,7 @@ See QUICK_START.txt for more details.
 """)
     print("  Created PORTABLE_README.txt")
 
-    print("\n✓ Distribution package created in dist/toddler-typing/")
+    print("\n[SUCCESS] Distribution package created in dist/toddler-typing/")
     print("\n" + "=" * 60)
     print("PORTABLE DISTRIBUTION READY!")
     print("=" * 60)
@@ -273,7 +298,7 @@ def main():
 
     # Check dependencies
     if not check_dependencies():
-        print("\n✗ Missing dependencies. Please install required packages.")
+        print("\n[FAILED] Missing dependencies. Please install required packages.")
         sys.exit(1)
 
     # Clean previous builds
@@ -281,12 +306,12 @@ def main():
 
     # Create executable
     if not create_executable():
-        print("\n✗ Build failed.")
+        print("\n[FAILED] Build failed.")
         sys.exit(1)
 
     # Create distribution package
     if not create_distribution_package():
-        print("\n✗ Failed to create distribution package.")
+        print("\n[FAILED] Failed to create distribution package.")
         sys.exit(1)
 
     print("\n" + "=" * 60)

@@ -1,6 +1,8 @@
-# Core dependencies
-pygame>=2.5.0
-pynput>=1.7.6
-pillow>=10.0.0
+# Core dependencies - exact versions for security and reproducibility
+# Last updated: 2025-11-08
+pygame==2.5.2
+pynput==1.7.6
+pillow==10.1.0
 
-# Development dependencies (install with: pip install -r requirements-dev.txt)
+# For flexible updates during development, use requirements-dev.txt
+# For production builds, these exact versions are recommended

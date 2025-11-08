@@ -7,8 +7,14 @@ a secure exit method.
 """
 
 import sys
-from typing import List, Set
-from threading import Thread, Event
+import time
+import logging
+from typing import List, Set, Dict
+from threading import Thread, Event, Lock
+from collections import defaultdict
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # Only import pynput on Windows
 if sys.platform == "win32":
@@ -36,6 +42,9 @@ class KeyboardLocker:
 
         self.exit_combination = exit_combination or ["ctrl", "shift", "esc"]
         self.current_keys: Set[str] = set()
+        self.key_lock = Lock()  # Thread safety for key tracking
+        self.key_timestamps: Dict[str, float] = defaultdict(float)  # Track when keys were pressed
+        self.exit_combo_timeout = 2.0  # seconds - all keys must be within this window
         self.should_exit_flag = Event()
         self.listener: keyboard.Listener = None
         self.running = False
@@ -88,7 +97,14 @@ class KeyboardLocker:
             False to suppress the key, True to allow it.
         """
         normalized = self._normalize_key(key)
-        self.current_keys.add(normalized)
+
+        with self.key_lock:
+            current_time = time.time()
+            self.current_keys.add(normalized)
+            self.key_timestamps[normalized] = current_time
+
+            # Clean up old timestamps (keys held too long)
+            self._clean_old_keys(current_time)
 
         # Check if exit combination is pressed
         if self._check_exit_combination():
@@ -112,17 +128,58 @@ class KeyboardLocker:
             True to continue listening.
         """
         normalized = self._normalize_key(key)
-        self.current_keys.discard(normalized)
+
+        with self.key_lock:
+            self.current_keys.discard(normalized)
+            if normalized in self.key_timestamps:
+                del self.key_timestamps[normalized]
+
         return True
+
+    def _clean_old_keys(self, current_time: float) -> None:
+        """
+        Remove keys that have been held too long (stuck keys).
+
+        Args:
+            current_time: Current timestamp
+
+        Note: Must be called within key_lock context
+        """
+        max_age = 10.0  # seconds
+        keys_to_remove = [
+            key for key, timestamp in self.key_timestamps.items()
+            if current_time - timestamp > max_age
+        ]
+        for key in keys_to_remove:
+            self.current_keys.discard(key)
+            del self.key_timestamps[key]
 
     def _check_exit_combination(self) -> bool:
         """
-        Check if the exit combination is currently pressed.
+        Check if the exit combination is currently pressed within timeout.
 
         Returns:
             True if exit combination is pressed, False otherwise.
         """
-        return all(key in self.current_keys for key in self.exit_combination)
+        with self.key_lock:
+            # Check all required keys are present
+            if not all(key in self.current_keys for key in self.exit_combination):
+                return False
+
+            # Check all keys were pressed within the timeout window
+            current_time = time.time()
+            combo_timestamps = [
+                self.key_timestamps.get(key, 0)
+                for key in self.exit_combination
+            ]
+
+            if not combo_timestamps:
+                return False
+
+            # All keys must be pressed within timeout window of each other
+            time_spread = max(combo_timestamps) - min(combo_timestamps)
+
+            return time_spread <= self.exit_combo_timeout
 
     def _should_block_key(self, key) -> bool:
         """
@@ -154,16 +211,20 @@ class KeyboardLocker:
             return
 
         self.running = True
+        # Use suppress=True to actually block keys at the OS level
         self.listener = keyboard.Listener(
-            on_press=self._on_press, on_release=self._on_release, suppress=False
+            on_press=self._on_press, on_release=self._on_release, suppress=True
         )
         self.listener.start()
+        logger.info("Keyboard lock started")
+        logger.info("Note: Some system key combinations (Ctrl+Alt+Delete) cannot be blocked.")
 
     def stop(self) -> None:
         """Stop the keyboard listener."""
         self.running = False
         if self.listener:
             self.listener.stop()
+            logger.info("Keyboard lock stopped")
 
     def should_exit(self) -> bool:
         """

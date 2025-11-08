@@ -48,7 +48,7 @@ See **[BUILD_PORTABLE.md](BUILD_PORTABLE.md)** for detailed instructions.
    - Development mode: Press ESC
    - Production mode: Press Ctrl+Shift+Esc
 
-For detailed usage instructions, see **[USAGE.md](USAGE.md)**
+For detailed usage instructions, see [USAGE.md](USAGE.md)
 
 ### Prerequisites
 
@@ -109,9 +109,26 @@ Example configuration:
 ## Safety Features
 
 - **Secure Exit**: Only Ctrl+Shift+Esc exits the program (difficult for toddlers to press accidentally)
-- **Keyboard Protection**: Blocks Windows key, Alt+Tab, and other system key combinations
+- **Keyboard Protection**: Blocks Windows key, Alt+Tab, and other system key combinations (Windows only)
 - **Fullscreen Mode**: Prevents accidental window switching
 - **No Network Access**: Completely offline application
+- **No Data Collection**: Zero telemetry or personal information collected
+- **Open Source**: All code is auditable and transparent
+
+## Security
+
+This project follows security best practices for child-focused applications. For important security information, please review:
+
+- **[SECURITY.md](SECURITY.md)** - Security policy, vulnerability reporting, and security considerations
+
+### Important Security Notes
+
+- **Development Status**: This application is currently in development. A security audit identified several issues that are being addressed before the 1.0 release.
+- **Keyboard Lock Limitations**: Ctrl+Alt+Delete cannot be blocked on Windows (this is a security feature by design). Parental supervision is still recommended.
+- **Use Production Config**: For actual toddler use, ensure you're using the production configuration with keyboard lock enabled.
+- **Report Vulnerabilities**: If you discover a security issue, please see [SECURITY.md](SECURITY.md) for responsible disclosure procedures.
+
+For detailed security information, see [SECURITY.md](SECURITY.md).
 
 ## Project Structure
 

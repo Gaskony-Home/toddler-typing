@@ -2,6 +2,14 @@
 
 This guide explains how to customize the Toddler Typing application through configuration.
 
+## Security Warning
+
+Configuration files control important security features like keyboard locking and exit combinations. Always:
+- Use configuration files from trusted sources only
+- Validate JSON syntax before use
+- Review security settings before enabling for toddler use
+- See [../SECURITY.md](../SECURITY.md) for security best practices
+
 ## Configuration File
 
 The application looks for a `config.json` file in the same directory as the executable (or in the project root when running from source).
@@ -38,11 +46,16 @@ Create a file named `config.json` with your desired settings. The application wi
 }
 ```
 
-- `enable_keyboard_lock`: Enable keyboard locking (default: true)
+- `enable_keyboard_lock`: Enable keyboard locking (default: true, Windows only)
 - `exit_combination`: Keys required to exit the program (default: ["ctrl", "shift", "esc"])
 - `blocked_keys`: System keys to block (default includes Windows key, Alt+Tab, etc.)
 
-**Security Note**: The exit combination should be difficult for a toddler to press accidentally but easy for parents to remember.
+**Security Notes**:
+- The exit combination should be difficult for a toddler to press accidentally but easy for parents to remember.
+- **Important**: Ctrl+Alt+Delete cannot be blocked on Windows. This is a security feature by design.
+- Keyboard lock only works on Windows. On other platforms, this setting is ignored.
+- The keyboard lock is not a security boundary - parental supervision is still recommended.
+- Test the exit combination before enabling fullscreen mode to ensure you can exit the application.
 
 ### Educational Content Settings
 
@@ -149,3 +162,52 @@ To reset to default settings:
 1. Delete or rename `config.json`
 2. Restart the application
 3. Default settings will be used
+
+## Security Best Practices
+
+### Configuration File Security
+
+1. **Validate Sources**: Only use configuration files from trusted sources
+2. **JSON Validation**: Ensure your config file has valid JSON syntax
+3. **Backup Original**: Keep a backup of working configuration files
+4. **Limit Permissions**: On multi-user systems, ensure config files are not world-writable
+
+### Recommended Settings for Toddler Use
+
+```json
+{
+  "fullscreen": true,
+  "enable_keyboard_lock": true,
+  "exit_combination": ["ctrl", "shift", "esc"],
+  "enable_letters": true,
+  "enable_numbers": true,
+  "enable_colors": true,
+  "enable_shapes": true,
+  "enable_sounds": true
+}
+```
+
+### Recommended Settings for Development/Testing
+
+```json
+{
+  "fullscreen": false,
+  "enable_keyboard_lock": false,
+  "screen_width": 1024,
+  "screen_height": 768
+}
+```
+
+### Configuration Validation
+
+The application validates configuration values and will:
+- Use default values for invalid or missing settings
+- Print warnings for unrecognized configuration keys
+- Continue running even if the config file has errors
+
+However, you should still:
+- Test configuration changes before using with children
+- Verify the exit combination works before enabling keyboard lock
+- Keep a backup of working configurations
+
+For more security information, see [../SECURITY.md](../SECURITY.md).
