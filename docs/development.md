@@ -310,17 +310,150 @@ Key considerations:
 - Test on clean Windows system
 - Create installer if desired
 
+## Security Guidelines
+
+### Secure Coding Practices
+
+When contributing to Toddler Typing, follow these security guidelines:
+
+#### Input Validation
+
+**Always validate inputs:**
+```python
+def set_brush_size(self, size: int) -> None:
+    """Set brush size with validation."""
+    if not isinstance(size, int):
+        raise TypeError("Brush size must be an integer")
+    if size < 1 or size > 100:
+        raise ValueError("Brush size must be between 1 and 100")
+    self.brush_size = size
+```
+
+#### File Path Handling
+
+**Always validate and sanitize file paths:**
+```python
+from pathlib import Path
+
+def load_asset(self, filename: str) -> Path:
+    """Load asset with path validation."""
+    # Get base directory
+    base_dir = Path(__file__).parent.resolve()
+
+    # Construct path
+    asset_path = (base_dir / "assets" / filename).resolve()
+
+    # Validate it's within allowed directory
+    try:
+        asset_path.relative_to(base_dir / "assets")
+    except ValueError:
+        raise SecurityError(f"Invalid asset path: {filename}")
+
+    if not asset_path.exists():
+        raise FileNotFoundError(f"Asset not found: {filename}")
+
+    return asset_path
+```
+
+#### Error Handling
+
+**Never expose sensitive information in error messages:**
+```python
+# Bad - exposes file paths
+try:
+    with open(config_file) as f:
+        config = json.load(f)
+except Exception as e:
+    print(f"Error: {e}")  # Don't do this
+
+# Good - generic error message to user, detailed logging for developers
+import logging
+logger = logging.getLogger(__name__)
+
+try:
+    with open(config_file) as f:
+        config = json.load(f)
+except json.JSONDecodeError:
+    logger.error(f"Invalid JSON in {config_file}")
+    print("Configuration file is invalid. Using defaults.")
+except Exception as e:
+    logger.exception("Unexpected error loading config")
+    print("Error loading configuration. Using defaults.")
+```
+
+#### Command Execution
+
+**Never use shell=True, always validate inputs:**
+```python
+# Bad - command injection risk
+subprocess.run(f"pyinstaller {user_input}", shell=True)
+
+# Good - list arguments, no shell
+subprocess.run(["pyinstaller", validated_argument], check=True)
+```
+
+### Security Testing
+
+Before submitting a pull request:
+
+1. **Test with Invalid Inputs**:
+   - Malformed JSON in config files
+   - Invalid paths (path traversal attempts)
+   - Out-of-range values
+   - Wrong data types
+
+2. **Review Error Messages**:
+   - Ensure no file paths exposed
+   - No stack traces visible to end users
+   - Generic error messages for security-sensitive operations
+
+3. **Check Dependencies**:
+   - Only use dependencies from official PyPI
+   - Verify package integrity
+   - Keep dependencies updated
+
+### Security Checklist for Pull Requests
+
+Before submitting, verify:
+
+- [ ] All user inputs are validated
+- [ ] File paths are sanitized and validated
+- [ ] No hardcoded credentials or sensitive data
+- [ ] Error messages don't leak information
+- [ ] No use of `eval()`, `exec()`, `shell=True`
+- [ ] Dependencies are from trusted sources
+- [ ] Tests cover security edge cases
+- [ ] Documentation updated if security-related
+
+See [../SECURITY.md](../SECURITY.md) for more detailed security information.
+
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests
+4. Add tests (including security tests)
 5. Run code formatting and type checking
-6. Submit a pull request
+6. Review security checklist above
+7. Submit a pull request
+
+### Pull Request Guidelines
+
+- Include clear description of changes
+- Reference any related issues
+- Include tests for new features
+- Update documentation as needed
+- Follow coding style guidelines
+- Pass all CI checks
 
 ## Resources
 
+### Documentation
 - [Pygame Documentation](https://www.pygame.org/docs/)
 - [Pynput Documentation](https://pynput.readthedocs.io/)
 - [Python Type Hints](https://docs.python.org/3/library/typing.html)
+
+### Security Resources
+- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
+- [Python Security](https://python.readthedocs.io/en/stable/library/security_warnings.html)
+- [CWE Top 25](https://cwe.mitre.org/top25/)

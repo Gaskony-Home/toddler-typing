@@ -1,5 +1,14 @@
 # Toddler Typing Usage Guide
 
+## Important Security Notice
+
+Before using Toddler Typing with your child, please note:
+
+- **Development Status**: This application is currently in development. Review [SECURITY.md](SECURITY.md) for current security status.
+- **Keyboard Lock Limitations**: Ctrl+Alt+Delete cannot be blocked on Windows (by design). Parental supervision is recommended.
+- **Test First**: Always test in development mode first before enabling keyboard lock and fullscreen.
+- **Know the Exit**: Make sure you can exit the application (Ctrl+Shift+Esc) before enabling production mode.
+
 ## Quick Start
 
 ### Running the Application
@@ -136,10 +145,12 @@ Prevents toddler from:
 ## Troubleshooting
 
 ### Keyboard Lock Not Working
-- Only works on Windows
-- Make sure `enable_keyboard_lock` is `true` in config.json
-- Try running as Administrator if issues persist
-- For testing, set `enable_keyboard_lock` to `false`
+- **Platform**: Only works on Windows (gracefully disabled on other platforms)
+- **Configuration**: Make sure `enable_keyboard_lock` is `true` in config.json
+- **Permissions**: Try running as Administrator if issues persist
+- **Testing**: For testing, set `enable_keyboard_lock` to `false`
+- **Important**: Ctrl+Alt+Delete CANNOT be blocked on Windows - this is a security feature by design
+- Some system key combinations may not be blockable due to Windows security policies
 
 ### Screen Size Issues
 - Edit `config.json` to set custom `screen_width` and `screen_height`
@@ -192,9 +203,57 @@ The executable will be in `dist/toddler-typing/`
 
 See [Building Documentation](docs/development.md) for details.
 
+## Safety and Security
+
+### Parental Guidelines
+
+1. **Always Supervise**: Especially during first-time use
+2. **Test Exit Combination**: Ensure you can exit before enabling fullscreen
+3. **Start Simple**: Begin with Colors & Shapes, progress to Letters/Numbers
+4. **Take Breaks**: Limit screen time to 10-15 minute sessions
+5. **Review Settings**: Understand configuration before using production mode
+
+### Security Features
+
+- **No Internet**: Application never connects online
+- **No Data Collection**: Zero telemetry or tracking
+- **Keyboard Lock**: Blocks system keys (Windows only, with limitations)
+- **Fullscreen Mode**: Prevents window switching when enabled
+- **Secure Exit**: Requires specific key combination
+
+### Security Limitations
+
+Be aware of these limitations:
+
+1. **Ctrl+Alt+Delete**: Cannot be blocked (Windows security feature)
+2. **Not a Security Boundary**: Keyboard lock is a convenience feature, not a security control
+3. **Supervision Recommended**: Don't rely solely on keyboard lock
+4. **Windows Only**: Keyboard lock only works on Windows
+
+For detailed security information, see [SECURITY.md](SECURITY.md).
+
+## Privacy
+
+Toddler Typing respects your family's privacy:
+
+- **No Data Collection**: We don't collect any information
+- **No Analytics**: No tracking or telemetry
+- **No Internet**: Completely offline
+- **No Accounts**: No sign-up or registration
+- **No Ads**: No advertisements or third-party content
+- **Open Source**: All code is transparent and auditable
+
 ## Getting Help
 
 - Check [README.md](README.md) for project overview
 - See [docs/configuration.md](docs/configuration.md) for detailed config options
 - See [docs/development.md](docs/development.md) for development guide
+- Review [SECURITY.md](SECURITY.md) for security information
 - Open an issue on GitHub for bugs or feature requests
+
+## Additional Resources
+
+- [Configuration Guide](docs/configuration.md) - Detailed configuration options
+- [Development Guide](docs/development.md) - For developers and contributors
+- [Build Guide](BUILD_PORTABLE.md) - Creating portable executables
+- [Security Policy](SECURITY.md) - Security considerations and reporting
