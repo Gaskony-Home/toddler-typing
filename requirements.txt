@@ -1,0 +1,6 @@
+# Core dependencies
+pygame>=2.5.0
+pynput>=1.7.6
+pillow>=10.0.0
+
+# Development dependencies (install with: pip install -r requirements-dev.txt)
