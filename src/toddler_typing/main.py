@@ -49,9 +49,10 @@ class ToddlerTypingApp:
             pygame.mixer.init()
 
             # Set up display
+            display_flags = pygame.FULLSCREEN if self.settings.fullscreen else pygame.RESIZABLE
             self.screen = pygame.display.set_mode(
                 (self.settings.screen_width, self.settings.screen_height),
-                pygame.FULLSCREEN if self.settings.fullscreen else 0,
+                display_flags,
             )
             pygame.display.set_caption("Toddler Typing")
 
@@ -149,6 +150,15 @@ class ToddlerTypingApp:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         self.running = False
+
+                    # Handle window resize
+                    if event.type == pygame.VIDEORESIZE:
+                        self.screen = pygame.display.set_mode(
+                            (event.w, event.h),
+                            pygame.RESIZABLE
+                        )
+                        self.settings.screen_width = event.w
+                        self.settings.screen_height = event.h
 
                     # Check for exit combination
                     if self.keyboard_locker and self.keyboard_locker.should_exit():
