@@ -16,7 +16,23 @@ A child-friendly program designed for safe computer interaction with educational
 
 ## Quick Start
 
-### Installation & Running
+### Option 1: Portable Version (Recommended for End Users)
+
+**Want to run without installing Python? Get the portable version:**
+
+1. **Build the portable version** (one-time setup):
+   ```bash
+   pip install -r requirements-build.txt
+   python make-portable.py
+   ```
+
+2. **Find your portable app** in `releases/` folder - it's a ZIP file
+
+3. **Extract and run** - that's it! No Python needed on target computers.
+
+See **[BUILD_PORTABLE.md](BUILD_PORTABLE.md)** for detailed instructions.
+
+### Option 2: Run from Source (For Development)
 
 1. **Install dependencies**:
    ```bash
@@ -36,27 +52,42 @@ For detailed usage instructions, see **[USAGE.md](USAGE.md)**
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.8 or higher (only for building/development)
 - Windows OS (for keyboard locking functionality - optional)
 - Linux/Mac supported without keyboard lock feature
 
-## Creating a Portable Executable
+### Quick Build Method
 
-To create a standalone executable that can run on any Windows computer without Python:
+**Automated build and packaging:**
 
-1. Install build dependencies:
 ```bash
 pip install -r requirements-build.txt
+python make-portable.py
 ```
 
-2. Run the build script:
+This creates a complete, ready-to-distribute ZIP file in `releases/` folder.
+
+**Manual build method:**
+
 ```bash
+pip install -r requirements-build.txt
 python build.py
 ```
 
-3. Find the executable in the `dist/` folder
+This creates the executable in `dist/toddler-typing/` folder.
 
-4. Copy the entire `dist/toddler-typing/` folder to any Windows computer and run `toddler-typing.exe`
+### What You Get
+
+A fully portable folder containing:
+- ✅ `toddler-typing.exe` - Standalone executable (no Python needed!)
+- ✅ `START_TODDLER_TYPING.bat` - Easy double-click launcher
+- ✅ All configuration files (dev, production, example)
+- ✅ Complete documentation
+- ✅ All required libraries bundled
+
+**Share the ZIP - recipients just extract and run!**
+
+See **[BUILD_PORTABLE.md](BUILD_PORTABLE.md)** for complete build instructions
 
 ## Configuration
 
