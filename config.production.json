@@ -1,0 +1,16 @@
+{
+  "_comment": "Production configuration - fullscreen, keyboard lock enabled",
+  "screen_width": 1920,
+  "screen_height": 1080,
+  "fullscreen": true,
+  "fps": 60,
+  "enable_keyboard_lock": true,
+  "exit_combination": ["ctrl", "shift", "esc"],
+  "blocked_keys": ["windows", "cmd", "alt+tab", "alt+f4", "ctrl+alt+delete"],
+  "enable_letters": true,
+  "enable_numbers": true,
+  "enable_colors": true,
+  "enable_shapes": true,
+  "enable_sounds": true,
+  "default_brush_size": 30
+}

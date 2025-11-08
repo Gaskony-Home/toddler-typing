@@ -16,35 +16,29 @@ A child-friendly program designed for safe computer interaction with educational
 
 ## Quick Start
 
+### Installation & Running
+
+1. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Run the application**:
+   ```bash
+   python3 run.py
+   ```
+
+3. **Exit the application**:
+   - Development mode: Press ESC
+   - Production mode: Press Ctrl+Shift+Esc
+
+For detailed usage instructions, see **[USAGE.md](USAGE.md)**
+
 ### Prerequisites
 
 - Python 3.8 or higher
-- Windows OS (for keyboard locking functionality)
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd toddler-typing
-```
-
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-### Running the Application
-
-```bash
-python -m toddler_typing.main
-```
-
-Or install and run:
-```bash
-pip install -e .
-toddler-typing
-```
+- Windows OS (for keyboard locking functionality - optional)
+- Linux/Mac supported without keyboard lock feature
 
 ## Creating a Portable Executable
 

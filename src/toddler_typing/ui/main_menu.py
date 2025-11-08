@@ -6,7 +6,7 @@ different activities.
 """
 
 import pygame
-from typing import List
+from typing import List, Callable
 
 from .button import Button
 from ..config.settings import Settings
@@ -15,16 +15,20 @@ from ..config.settings import Settings
 class MainMenu:
     """Main menu screen with activity selection."""
 
-    def __init__(self, screen: pygame.Surface, settings: Settings) -> None:
+    def __init__(
+        self, screen: pygame.Surface, settings: Settings, switch_state: Callable
+    ) -> None:
         """
         Initialize the main menu.
 
         Args:
             screen: The pygame surface to draw on.
             settings: Application settings.
+            switch_state: Callback function to switch application state.
         """
         self.screen = screen
         self.settings = settings
+        self.switch_state = switch_state
         self.buttons: List[Button] = []
 
         # Title font
@@ -72,23 +76,27 @@ class MainMenu:
 
     def _start_letters(self) -> None:
         """Start the letters learning activity."""
-        # TODO: Implement letters activity
-        print("Starting Letters activity...")
+        from ..main import AppState
+
+        self.switch_state(AppState.LETTERS)
 
     def _start_numbers(self) -> None:
         """Start the numbers learning activity."""
-        # TODO: Implement numbers activity
-        print("Starting Numbers activity...")
+        from ..main import AppState
+
+        self.switch_state(AppState.NUMBERS)
 
     def _start_drawing(self) -> None:
         """Start the drawing activity."""
-        # TODO: Implement drawing activity
-        print("Starting Drawing activity...")
+        from ..main import AppState
+
+        self.switch_state(AppState.DRAWING)
 
     def _start_colors_shapes(self) -> None:
         """Start the colors and shapes activity."""
-        # TODO: Implement colors and shapes activity
-        print("Starting Colors & Shapes activity...")
+        from ..main import AppState
+
+        self.switch_state(AppState.COLORS_SHAPES)
 
     def handle_event(self, event: pygame.event.Event) -> None:
         """
