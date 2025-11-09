@@ -29,21 +29,51 @@ class Settings:
         Args:
             config_file: Path to configuration file.
         """
-        # Display settings
-        self.screen_width: int = 1024
-        self.screen_height: int = 768
+        # Display settings (0 = auto-detect native resolution)
+        self.screen_width: int = 0
+        self.screen_height: int = 0
         self.fullscreen: bool = True
         self.fps: int = 60
 
-        # Color scheme (bright, child-friendly colors)
-        self.colors: Dict[str, Tuple[int, int, int]] = {
-            "background": (173, 216, 230),  # Light blue
-            "primary": (255, 105, 180),  # Hot pink
-            "secondary": (255, 215, 0),  # Gold
-            "success": (50, 205, 50),  # Lime green
-            "text": (0, 0, 0),  # Black
+        # Dark mode setting (default enabled)
+        self.dark_mode: bool = True
+
+        # Light color scheme (modern, professional, child-friendly)
+        self.light_colors: Dict[str, Tuple[int, int, int]] = {
+            "background": (248, 250, 252),  # Slate-50 - Soft white-gray
+            "surface": (255, 255, 255),  # Pure white for cards/buttons
+            "primary": (168, 85, 247),  # Purple-500 - Playful purple
+            "primary_hover": (147, 51, 234),  # Purple-600
+            "secondary": (249, 115, 22),  # Orange-500 - Vibrant orange
+            "secondary_hover": (234, 88, 12),  # Orange-600
+            "success": (34, 197, 94),  # Green-500 - Modern green
+            "success_hover": (22, 163, 74),  # Green-600
+            "info": (59, 130, 246),  # Blue-500 - Bright blue
+            "text": (15, 23, 42),  # Slate-900 - Dark text
+            "text_secondary": (71, 85, 105),  # Slate-600
             "white": (255, 255, 255),  # White
+            "border": (226, 232, 240),  # Slate-200
         }
+
+        # Dark color scheme (modern, professional)
+        self.dark_colors: Dict[str, Tuple[int, int, int]] = {
+            "background": (15, 23, 42),  # Slate-900
+            "surface": (30, 41, 59),  # Slate-800
+            "primary": (192, 132, 252),  # Purple-400 - Lighter for dark
+            "primary_hover": (168, 85, 247),  # Purple-500
+            "secondary": (251, 146, 60),  # Orange-400 - Lighter for dark
+            "secondary_hover": (249, 115, 22),  # Orange-500
+            "success": (74, 222, 128),  # Green-400
+            "success_hover": (34, 197, 94),  # Green-500
+            "info": (96, 165, 250),  # Blue-400
+            "text": (248, 250, 252),  # Slate-50 - Light text
+            "text_secondary": (203, 213, 225),  # Slate-300
+            "white": (255, 255, 255),  # White
+            "border": (71, 85, 105),  # Slate-600
+        }
+
+        # Set initial color scheme (dark mode by default)
+        self.colors: Dict[str, Tuple[int, int, int]] = self.dark_colors
 
         # Keyboard lock settings
         self.enable_keyboard_lock: bool = True
@@ -160,6 +190,12 @@ class Settings:
         """Read-only access to fonts directory."""
         return self._fonts_dir
 
+    def toggle_dark_mode(self) -> None:
+        """Toggle dark mode on/off and update color scheme."""
+        self.dark_mode = not self.dark_mode
+        self.colors = self.dark_colors if self.dark_mode else self.light_colors
+        logger.info(f"Dark mode {'enabled' if self.dark_mode else 'disabled'}")
+
     def load_config(self) -> None:
         """Load settings from configuration file if it exists."""
         if self.config_file.exists():
@@ -193,6 +229,7 @@ class Settings:
             "screen_height": (int, lambda v: 480 <= v <= 4320),
             "fullscreen": (bool, lambda v: True),
             "fps": (int, lambda v: 1 <= v <= 120),
+            "dark_mode": (bool, lambda v: True),
             "enable_keyboard_lock": (bool, lambda v: True),
             "exit_combination": (list, lambda v: len(v) > 0 and all(isinstance(k, str) for k in v)),
             "blocked_keys": (list, lambda v: all(isinstance(k, str) for k in v)),
@@ -234,6 +271,12 @@ class Settings:
             setattr(self, key, value)
             logger.debug(f"Applied config: {key} = {value}")
 
+        # Apply dark mode colors if dark_mode was loaded
+        if self.dark_mode:
+            self.colors = self.dark_colors
+        else:
+            self.colors = self.light_colors
+
     def save_config(self) -> None:
         """Save current settings to configuration file."""
         config_data = {
@@ -241,6 +284,7 @@ class Settings:
             "screen_height": self.screen_height,
             "fullscreen": self.fullscreen,
             "fps": self.fps,
+            "dark_mode": self.dark_mode,
             "enable_keyboard_lock": self.enable_keyboard_lock,
             "exit_combination": self.exit_combination,
             "blocked_keys": self.blocked_keys,

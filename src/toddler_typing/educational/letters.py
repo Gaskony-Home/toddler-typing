@@ -6,17 +6,18 @@ This module provides an interactive activity for learning letters.
 
 import pygame
 import random
-from typing import Callable
+from typing import Callable, Optional
 
 from ..config.settings import Settings
 from ..ui.button import Button
+from ..audio.voice_manager import VoiceManager
 
 
 class LettersActivity:
     """Interactive letters learning activity."""
 
     def __init__(
-        self, screen: pygame.Surface, settings: Settings, switch_state: Callable
+        self, screen: pygame.Surface, settings: Settings, switch_state: Callable, voice_manager: Optional[VoiceManager] = None
     ) -> None:
         """
         Initialize the letters activity.
@@ -25,10 +26,12 @@ class LettersActivity:
             screen: The pygame surface to draw on.
             settings: Application settings.
             switch_state: Callback function to switch application state.
+            voice_manager: Optional voice manager for text-to-speech.
         """
         self.screen = screen
         self.settings = settings
         self.switch_state = switch_state
+        self.voice_manager = voice_manager
         self.font = pygame.font.Font(None, 200)
         self.instruction_font = pygame.font.Font(None, 48)
 
