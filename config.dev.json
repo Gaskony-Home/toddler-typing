@@ -1,11 +1,13 @@
 {
-  "_comment": "Development configuration - keyboard lock disabled, windowed mode",
-  "screen_width": 1024,
-  "screen_height": 768,
+  "_comment": "Default configuration - maximized window, ESC to exit",
+  "screen_width": 0,
+  "screen_height": 0,
   "fullscreen": false,
   "fps": 60,
   "enable_keyboard_lock": false,
-  "exit_combination": ["ctrl", "shift", "esc"],
+  "exit_combination": [
+    "esc"
+  ],
   "enable_letters": true,
   "enable_numbers": true,
   "enable_colors": true,

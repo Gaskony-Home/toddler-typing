@@ -19,13 +19,20 @@ def clean_build_artifacts():
     dirs_to_remove = ["build", "dist"]
     for dir_name in dirs_to_remove:
         if os.path.exists(dir_name):
-            shutil.rmtree(dir_name)
-            print(f"  Removed {dir_name}/")
+            try:
+                shutil.rmtree(dir_name)
+                print(f"  Removed {dir_name}/")
+            except PermissionError:
+                print(f"  WARNING: Could not remove {dir_name}/ (files in use)")
+                print(f"  Attempting to continue anyway...")
 
     # Remove spec files
     for spec_file in Path(".").glob("*.spec"):
-        spec_file.unlink()
-        print(f"  Removed {spec_file}")
+        try:
+            spec_file.unlink()
+            print(f"  Removed {spec_file}")
+        except PermissionError:
+            print(f"  WARNING: Could not remove {spec_file} (file in use)")
 
 
 def check_dependencies():
@@ -65,13 +72,13 @@ def create_executable():
 
     # Get absolute paths for security
     project_root = Path(__file__).parent.resolve()
-    main_script = project_root / "src" / "toddler_typing" / "main.py"
+    main_script = project_root / "launcher.py"
     assets_dir = project_root / "src" / "toddler_typing" / "assets"
     icon_path = assets_dir / "images" / "icon.ico"
 
     # Validate paths exist
     if not main_script.exists():
-        print(f"  ERROR: Main script not found: {main_script}")
+        print(f"  ERROR: Launcher script not found: {main_script}")
         return False
 
     if not assets_dir.exists():
@@ -88,12 +95,20 @@ def create_executable():
         "--onedir",  # Create a directory with dependencies
         "--windowed",  # No console window
         "--clean",
+        "-y",  # Overwrite output directory without confirmation
         f"--add-data={assets_dir}{os.pathsep}assets",
         "--hidden-import=pygame",
         "--hidden-import=pynput",
         "--hidden-import=pynput.keyboard",
         "--hidden-import=pynput.keyboard._win32",
+        "--hidden-import=pyttsx3",
+        "--hidden-import=comtypes",
+        "--hidden-import=toddler_typing",
+        "--hidden-import=toddler_typing.main",
+        "--hidden-import=toddler_typing.activities",
+        "--hidden-import=toddler_typing.config",
         "--collect-all=pygame",
+        f"--paths={project_root / 'src'}",  # Add src directory to Python path
         str(main_script),  # Use string of Path object for safety
     ]
 
@@ -117,9 +132,9 @@ def create_executable():
     except subprocess.CalledProcessError as e:
         print(f"\n[FAILED] Build failed")
         if e.stdout:
-            print(f"  Output: {e.stdout[:500]}")  # Limit output
+            print(f"  Output: {e.stdout[-2000:]}")  # Show last 2000 chars
         if e.stderr:
-            print(f"  Error: {e.stderr[:500]}")  # Limit output
+            print(f"  Error: {e.stderr[-2000:]}")  # Show last 2000 chars
         return False
 
 
@@ -289,6 +304,39 @@ See QUICK_START.txt for more details.
     return True
 
 
+def update_desktop_shortcut():
+    """Update desktop shortcut to point to latest build."""
+    print("\nUpdating desktop shortcut...")
+
+    try:
+        # Run PowerShell script to create/update shortcut
+        script_path = Path(__file__).parent / "create_shortcut.ps1"
+
+        if not script_path.exists():
+            print("  WARNING: create_shortcut.ps1 not found, skipping shortcut update")
+            return True
+
+        result = subprocess.run(
+            ["powershell", "-ExecutionPolicy", "Bypass", "-File", str(script_path)],
+            capture_output=True,
+            text=True,
+            cwd=str(Path(__file__).parent)
+        )
+
+        if result.returncode == 0:
+            print("  Desktop shortcut updated successfully!")
+            return True
+        else:
+            print(f"  WARNING: Could not update desktop shortcut")
+            if result.stderr:
+                print(f"  Error: {result.stderr[:200]}")
+            return True  # Don't fail the build for shortcut issues
+
+    except Exception as e:
+        print(f"  WARNING: Could not update desktop shortcut: {e}")
+        return True  # Don't fail the build for shortcut issues
+
+
 def main():
     """Main build process."""
     print("=" * 60)
@@ -317,6 +365,9 @@ def main():
     print("\n" + "=" * 60)
     print("BUILD COMPLETE!")
     print("=" * 60)
+
+    # Update desktop shortcut
+    update_desktop_shortcut()
 
 
 if __name__ == "__main__":

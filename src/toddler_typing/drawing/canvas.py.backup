@@ -14,8 +14,6 @@ from ..config.settings import Settings
 from ..ui.button import Button
 from ..ui.voice_controls import VoiceControls
 from ..audio.voice_manager import VoiceManager
-from ..gamification import ProgressManager, Celebration, StarDisplay
-from ..config.fonts import get_font_manager
 
 
 class DrawingCanvas:
@@ -39,7 +37,7 @@ class DrawingCanvas:
         self.voice_manager = voice_manager
 
         # Title font
-        self.title_font = get_font_manager().get_font(72, bold=True)
+        self.title_font = pygame.font.Font(None, 72)
         self.title_text = "Free Drawing"
         self.title_color = self.settings.colors["primary"]
 
@@ -53,12 +51,6 @@ class DrawingCanvas:
         # Create canvas surface
         self.canvas = pygame.Surface((self.settings.screen_width, self.settings.screen_height))
         self.canvas.fill((255, 255, 255))  # White canvas
-
-        # Gamification system
-        self.progress_manager = ProgressManager()
-        self.celebration = Celebration(settings.screen_width, settings.screen_height)
-        self.star_display = StarDisplay(settings.screen_width, settings.screen_height)
-        self.star_display.set_star_count(self.progress_manager.total_stars)
 
         # Back button (top-left corner)
         self.back_button = Button(
@@ -202,16 +194,6 @@ class DrawingCanvas:
             # Save the canvas
             pygame.image.save(self.canvas, filepath)
 
-            # Award star for saving drawing
-            star_awarded, level_up = self.progress_manager.award_star("drawing")
-            if star_awarded:
-                target_x, target_y = self.star_display.get_position()
-                self.celebration.show_star_animation(target_x, target_y)
-                self.star_display.set_star_count(self.progress_manager.total_stars, animate=True)
-
-                if level_up:
-                    self.celebration.show_level_up(self.progress_manager.current_level)
-
             # Announce save success
             if self.voice_controls:
                 self.voice_controls.speak(f"Drawing saved!")
@@ -266,9 +248,7 @@ class DrawingCanvas:
 
     def update(self) -> None:
         """Update drawing state."""
-        # Update gamification animations
-        self.celebration.update()
-        self.star_display.update()
+        pass
 
     def draw(self) -> None:
         """Draw the canvas and UI."""
@@ -319,10 +299,6 @@ class DrawingCanvas:
         # Draw voice controls
         if self.voice_controls:
             self.voice_controls.draw(self.screen)
-
-        # Draw gamification elements
-        self.star_display.draw(self.screen)
-        self.celebration.draw(self.screen)
 
         # Draw tooltips on top
         for button in self.color_buttons:

@@ -6,3 +6,4 @@ pillow==10.1.0
 
 # For flexible updates during development, use requirements-dev.txt
 # For production builds, these exact versions are recommended
+pyttsx3==2.90

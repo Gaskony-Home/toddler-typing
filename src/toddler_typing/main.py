@@ -13,6 +13,7 @@ from enum import Enum
 from .config.settings import Settings
 from .ui.main_menu import MainMenu
 from .keyboard.locker import KeyboardLocker
+from .audio.voice_manager import VoiceManager
 
 
 class AppState(Enum):
@@ -21,6 +22,8 @@ class AppState(Enum):
     MENU = "menu"
     LETTERS = "letters"
     NUMBERS = "numbers"
+    LETTERS_NUMBERS = "letters_numbers"
+    COLORING = "coloring"
     DRAWING = "drawing"
     COLORS_SHAPES = "colors_shapes"
 
@@ -32,6 +35,7 @@ class ToddlerTypingApp:
         """Initialize the application."""
         self.settings = Settings()
         self.keyboard_locker: Optional[KeyboardLocker] = None
+        self.voice_manager: Optional[VoiceManager] = None
         self.running = False
         self.screen: Optional[pygame.Surface] = None
         self.current_state = AppState.MENU
@@ -50,11 +54,38 @@ class ToddlerTypingApp:
 
             # Set up display
             display_flags = pygame.FULLSCREEN if self.settings.fullscreen else pygame.RESIZABLE
-            self.screen = pygame.display.set_mode(
-                (self.settings.screen_width, self.settings.screen_height),
-                display_flags,
-            )
+            
+            # Use auto-detect for screen dimensions if set to 0
+            if self.settings.screen_width == 0 or self.settings.screen_height == 0:
+                if self.settings.fullscreen:
+                    # In fullscreen, use native resolution
+                    self.screen = pygame.display.set_mode((0, 0), display_flags)
+                else:
+                    # In windowed mode, start with reasonable size then maximize
+                    info = pygame.display.Info()
+                    # Use 90% of screen to leave room for taskbar
+                    width = int(info.current_w * 0.9)
+                    height = int(info.current_h * 0.9)
+                    self.screen = pygame.display.set_mode((width, height), display_flags)
+            else:
+                self.screen = pygame.display.set_mode(
+                    (self.settings.screen_width, self.settings.screen_height),
+                    display_flags,
+                )
+            
             pygame.display.set_caption("Toddler Typing")
+            
+            # Maximize window if not fullscreen
+            if not self.settings.fullscreen:
+                pygame.display.toggle_fullscreen()  # This maximizes on Windows
+                pygame.display.toggle_fullscreen()  # Toggle back to keep decorations
+
+            # Update settings with actual screen size
+            actual_width, actual_height = self.screen.get_size()
+            self.settings.screen_width = actual_width
+            self.settings.screen_height = actual_height
+            
+            print(f"Screen resolution: {actual_width}x{actual_height}")
 
             # Initialize keyboard locker if enabled (Windows only)
             if self.settings.enable_keyboard_lock and sys.platform == "win32":
@@ -66,6 +97,13 @@ class ToddlerTypingApp:
                 except Exception as e:
                     print(f"Could not start keyboard locker: {e}")
                     print("Continuing without keyboard lock.")
+
+            # Initialize voice manager
+            try:
+                self.voice_manager = VoiceManager()
+            except Exception as e:
+                print(f"Could not start voice manager: {e}")
+                print("Continuing without voice support.")
 
             return True
 
@@ -93,7 +131,7 @@ class ToddlerTypingApp:
         if self.current_state == AppState.MENU:
             if not self.current_activity:
                 self.current_activity = MainMenu(
-                    self.screen, self.settings, self.switch_to_state
+                    self.screen, self.settings, self.switch_to_state, self.voice_manager
                 )
             return self.current_activity
 
@@ -102,7 +140,7 @@ class ToddlerTypingApp:
                 from .educational.letters import LettersActivity
 
                 self.current_activity = LettersActivity(
-                    self.screen, self.settings, self.switch_to_state
+                    self.screen, self.settings, self.switch_to_state, self.voice_manager
                 )
             return self.current_activity
 
@@ -111,7 +149,16 @@ class ToddlerTypingApp:
                 from .educational.numbers import NumbersActivity
 
                 self.current_activity = NumbersActivity(
-                    self.screen, self.settings, self.switch_to_state
+                    self.screen, self.settings, self.switch_to_state, self.voice_manager
+                )
+            return self.current_activity
+
+        elif self.current_state == AppState.LETTERS_NUMBERS:
+            if not self.current_activity:
+                from .educational.letters_numbers import LettersNumbersActivity
+
+                self.current_activity = LettersNumbersActivity(
+                    self.screen, self.settings, self.switch_to_state, self.voice_manager
                 )
             return self.current_activity
 
@@ -120,7 +167,16 @@ class ToddlerTypingApp:
                 from .drawing.canvas import DrawingCanvas
 
                 self.current_activity = DrawingCanvas(
-                    self.screen, self.settings, self.switch_to_state
+                    self.screen, self.settings, self.switch_to_state, self.voice_manager
+                )
+            return self.current_activity
+
+        elif self.current_state == AppState.COLORING:
+            if not self.current_activity:
+                from .educational.coloring import ColoringActivity
+
+                self.current_activity = ColoringActivity(
+                    self.screen, self.settings, self.switch_to_state, self.voice_manager
                 )
             return self.current_activity
 
@@ -129,7 +185,7 @@ class ToddlerTypingApp:
                 from .educational.colors_shapes import ColorsShapesActivity
 
                 self.current_activity = ColorsShapesActivity(
-                    self.screen, self.settings, self.switch_to_state
+                    self.screen, self.settings, self.switch_to_state, self.voice_manager
                 )
             return self.current_activity
 
@@ -193,6 +249,8 @@ class ToddlerTypingApp:
 
     def cleanup(self) -> None:
         """Clean up resources before exiting."""
+        if self.voice_manager:
+            self.voice_manager.cleanup()
         if self.keyboard_locker:
             self.keyboard_locker.stop()
 
