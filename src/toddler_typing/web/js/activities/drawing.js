@@ -1,0 +1,173 @@
+/**
+ * Drawing Activity - Free-form drawing with colors and brush sizes
+ */
+
+class DrawingActivity {
+    constructor() {
+        this.canvas = null;
+        this.ctx = null;
+        this.isDrawing = false;
+        this.currentColor = '#FF0000'; // Red by default
+        this.currentBrushSize = 15; // Medium by default
+        this.lastX = 0;
+        this.lastY = 0;
+    }
+
+    async start() {
+        console.log('Starting Drawing activity');
+
+        // Get canvas element
+        this.canvas = document.getElementById('drawingCanvas');
+        if (!this.canvas) {
+            console.error('Canvas element not found');
+            return;
+        }
+
+        this.ctx = this.canvas.getContext('2d');
+
+        // Set canvas size to be responsive
+        this.resizeCanvas();
+        window.addEventListener('resize', () => this.resizeCanvas());
+
+        // Initialize canvas
+        this.clearCanvas();
+
+        // Set up event listeners
+        this.setupColorPalette();
+        this.setupBrushSizes();
+        this.setupClearButton();
+        this.setupDrawingEvents();
+    }
+
+    resizeCanvas() {
+        // Store the current canvas content
+        const imageData = this.canvas ? this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height) : null;
+
+        // Calculate new canvas size (maintain aspect ratio)
+        const container = this.canvas.parentElement;
+        const maxWidth = Math.min(container.clientWidth - 40, 1000);
+        const maxHeight = Math.min(window.innerHeight - 350, 600);
+
+        this.canvas.width = maxWidth;
+        this.canvas.height = maxHeight;
+
+        // Restore canvas content if it existed
+        if (imageData) {
+            this.ctx.putImageData(imageData, 0, 0);
+        }
+    }
+
+    setupColorPalette() {
+        const colorButtons = document.querySelectorAll('.color-btn');
+        colorButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active class from all buttons
+                colorButtons.forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                btn.classList.add('active');
+                // Set current color
+                this.currentColor = btn.dataset.color;
+            });
+        });
+    }
+
+    setupBrushSizes() {
+        const sizeButtons = document.querySelectorAll('.brush-size-btn');
+        sizeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active class from all buttons
+                sizeButtons.forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                btn.classList.add('active');
+                // Set current brush size
+                this.currentBrushSize = parseInt(btn.dataset.size);
+            });
+        });
+    }
+
+    setupClearButton() {
+        const clearBtn = document.getElementById('clearCanvas');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => this.clearCanvas());
+        }
+    }
+
+    clearCanvas() {
+        if (this.ctx) {
+            this.ctx.fillStyle = 'white';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+    }
+
+    setupDrawingEvents() {
+        // Mouse events
+        this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
+        this.canvas.addEventListener('mousemove', (e) => this.draw(e));
+        this.canvas.addEventListener('mouseup', () => this.stopDrawing());
+        this.canvas.addEventListener('mouseout', () => this.stopDrawing());
+
+        // Touch events for mobile
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            this.canvas.dispatchEvent(mouseEvent);
+        });
+
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            this.canvas.dispatchEvent(mouseEvent);
+        });
+
+        this.canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const mouseEvent = new MouseEvent('mouseup', {});
+            this.canvas.dispatchEvent(mouseEvent);
+        });
+    }
+
+    startDrawing(e) {
+        this.isDrawing = true;
+        const rect = this.canvas.getBoundingClientRect();
+        this.lastX = e.clientX - rect.left;
+        this.lastY = e.clientY - rect.top;
+    }
+
+    draw(e) {
+        if (!this.isDrawing) return;
+
+        const rect = this.canvas.getBoundingClientRect();
+        const currentX = e.clientX - rect.left;
+        const currentY = e.clientY - rect.top;
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.lastX, this.lastY);
+        this.ctx.lineTo(currentX, currentY);
+        this.ctx.strokeStyle = this.currentColor;
+        this.ctx.lineWidth = this.currentBrushSize;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+        this.ctx.stroke();
+
+        this.lastX = currentX;
+        this.lastY = currentY;
+    }
+
+    stopDrawing() {
+        this.isDrawing = false;
+    }
+
+    stop() {
+        console.log('Stopping Drawing activity');
+        // Clean up event listeners
+        window.removeEventListener('resize', () => this.resizeCanvas());
+    }
+}

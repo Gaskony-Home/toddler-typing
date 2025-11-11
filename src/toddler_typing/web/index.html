@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Toddler Typing</title>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/custom.css">
+</head>
+<body>
+    <!-- Header with controls -->
+    <header class="page-header">
+        <div class="header-controls">
+            <!-- Theme Toggle -->
+            <button id="themeToggle" class="btn-icon">
+                <i class="bi bi-moon-fill"></i>
+            </button>
+            <!-- Fullscreen Toggle -->
+            <button id="fullscreenToggle" class="btn-icon">
+                <i class="bi bi-fullscreen"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Page Container -->
+    <div class="page-container">
+        <!-- Main Menu (centered) -->
+        <div id="mainMenu" class="menu-wrapper">
+            <h1 class="menu-title text-gradient">Let's Play!</h1>
+
+            <!-- 2x2 Grid -->
+            <div class="activity-grid">
+                <!-- Letters & Numbers -->
+                <button class="activity-card" onclick="startActivity('letters_numbers')">
+                    <i class="bi bi-alphabet card-icon"></i>
+                    <h3 class="card-title">Letters & Numbers</h3>
+                    <p class="card-subtitle">Learn ABC and 123</p>
+                </button>
+
+                <!-- Drawing -->
+                <button class="activity-card card-drawing" onclick="startActivity('drawing')">
+                    <i class="bi bi-brush card-icon"></i>
+                    <h3 class="card-title">Drawing</h3>
+                    <p class="card-subtitle">Create beautiful art</p>
+                </button>
+
+                <!-- Colors & Shapes -->
+                <button class="activity-card card-shapes" onclick="startActivity('colors_shapes')">
+                    <i class="bi bi-triangle card-icon"></i>
+                    <h3 class="card-title">Colors & Shapes</h3>
+                    <p class="card-subtitle">Discover colors and shapes</p>
+                </button>
+
+                <!-- Coloring -->
+                <button class="activity-card card-coloring" onclick="startActivity('coloring')">
+                    <i class="bi bi-palette card-icon"></i>
+                    <h3 class="card-title">Coloring</h3>
+                    <p class="card-subtitle">Paint and color pictures</p>
+                </button>
+            </div>
+        </div>
+
+        <!-- Activity Screens (hidden by default) -->
+        <div id="activityScreen" class="activity-screen-wrapper">
+            <button class="btn-back" onclick="returnToMenu()">
+                <i class="bi bi-arrow-left"></i> Back to Menu
+            </button>
+            <div id="activityContent">
+                <!-- Activity content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="page-footer">
+        <small id="versionLabel">v1.0.0</small>
+    </footer>
+
+    <!-- Bootstrap 5.3 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Activity modules -->
+    <script src="js/activities/letters_numbers.js"></script>
+    <script src="js/activities/drawing.js"></script>
+    <script src="js/activities/colors_shapes.js"></script>
+    <!-- Custom JS -->
+    <script src="js/app.js"></script>
+</body>
+</html>

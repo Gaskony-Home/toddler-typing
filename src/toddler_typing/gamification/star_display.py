@@ -198,11 +198,11 @@ class StarDisplay:
 
         text_surface = self.font.render(text, True, text_color)
 
-        # Apply scale
+        # Apply scale with smoothscale for anti-aliased quality
         if scale != 1.0:
             new_width = int(text_surface.get_width() * scale)
             new_height = int(text_surface.get_height() * scale)
-            text_surface = pygame.transform.scale(text_surface, (new_width, new_height))
+            text_surface = pygame.transform.smoothscale(text_surface, (new_width, new_height))
 
         # Position text
         text_x = self.x - 90

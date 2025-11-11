@@ -11,6 +11,7 @@ from typing import Callable, Optional
 from ..config.settings import Settings
 from ..ui.button import Button
 from ..audio.voice_manager import VoiceManager
+from ..config.fonts import get_font_manager
 
 
 class NumbersActivity:
@@ -32,8 +33,9 @@ class NumbersActivity:
         self.settings = settings
         self.switch_state = switch_state
         self.voice_manager = voice_manager
-        self.font = pygame.font.Font(None, 200)
-        self.instruction_font = pygame.font.Font(None, 48)
+        # Use font manager for crisp, anti-aliased text rendering
+        self.font = get_font_manager().get_font(200, bold=True)
+        self.instruction_font = get_font_manager().get_font(48)
 
         self.current_number: int = 0
         self.success_flash = 0  # Frames to show success feedback
@@ -75,13 +77,25 @@ class NumbersActivity:
         if self.success_flash > 0:
             self.success_flash -= 1
 
+    def _draw_gradient_background(self) -> None:
+        """Draw smooth gradient background."""
+        start_color = self.settings.colors.get("bg_gradient_start", self.settings.colors["background"])
+        end_color = self.settings.colors.get("bg_gradient_end", self.settings.colors["background"])
+
+        # Create vertical gradient
+        for y in range(self.settings.screen_height):
+            # Calculate blend ratio
+            ratio = y / self.settings.screen_height
+            color = tuple(int(start_color[i] * (1 - ratio) + end_color[i] * ratio) for i in range(3))
+            pygame.draw.line(self.screen, color, (0, y), (self.settings.screen_width, y))
+
     def draw(self) -> None:
         """Draw the numbers activity."""
         # Background color changes briefly on success
         if self.success_flash > 0:
             self.screen.fill(self.settings.colors["success"])
         else:
-            self.screen.fill(self.settings.colors["background"])
+            self._draw_gradient_background()
 
         # Draw instruction
         instruction = "Press the number on the keyboard!"

@@ -175,11 +175,22 @@ class Button:
             rect_3 = text_3.get_rect(center=(x + spacing * 0.5, y + spacing * 0.4))
             screen.blit(text_3, rect_3)
 
-            # Add decorative circles around numbers
+            # Add decorative circles around numbers with anti-aliasing
             circle_radius = int(size * 0.18)
-            pygame.draw.circle(screen, color, (int(x), int(y - spacing * 0.6)), circle_radius, 4)
-            pygame.draw.circle(screen, color, (int(x - spacing * 0.5), int(y + spacing * 0.4)), circle_radius, 4)
-            pygame.draw.circle(screen, color, (int(x + spacing * 0.5), int(y + spacing * 0.4)), circle_radius, 4)
+            # Circle around "1" - anti-aliased
+            pygame.gfxdraw.aacircle(screen, int(x), int(y - spacing * 0.6), circle_radius, color)
+            for i in range(4):  # Thick outline
+                pygame.gfxdraw.circle(screen, int(x), int(y - spacing * 0.6), circle_radius - i, color)
+
+            # Circle around "2" - anti-aliased
+            pygame.gfxdraw.aacircle(screen, int(x - spacing * 0.5), int(y + spacing * 0.4), circle_radius, color)
+            for i in range(4):
+                pygame.gfxdraw.circle(screen, int(x - spacing * 0.5), int(y + spacing * 0.4), circle_radius - i, color)
+
+            # Circle around "3" - anti-aliased
+            pygame.gfxdraw.aacircle(screen, int(x + spacing * 0.5), int(y + spacing * 0.4), circle_radius, color)
+            for i in range(4):
+                pygame.gfxdraw.circle(screen, int(x + spacing * 0.5), int(y + spacing * 0.4), circle_radius - i, color)
 
         elif self.icon == "pencil":
             # Much more detailed pencil with better proportions and thicker lines
@@ -192,12 +203,17 @@ class Button:
             pygame.draw.rect(screen, (255, 200, 100), body_rect, border_radius=3)
             pygame.draw.rect(screen, color, body_rect, 4, border_radius=3)
 
-            # Wood texture lines
+            # Wood texture lines with anti-aliasing
             for i in range(3):
                 line_y = y - body_height / 2 + (i + 1) * body_height / 4
-                pygame.draw.line(screen, (200, 160, 80),
+                # Draw anti-aliased lines for smooth appearance
+                pygame.draw.aaline(screen, (200, 160, 80),
                                (x - body_width / 2 + 3, line_y),
-                               (x + body_width / 2 - 3, line_y), 2)
+                               (x + body_width / 2 - 3, line_y))
+                # Draw second line for thickness
+                pygame.draw.aaline(screen, (200, 160, 80),
+                               (x - body_width / 2 + 3, line_y + 1),
+                               (x + body_width / 2 - 3, line_y + 1))
 
             # Pencil tip (larger triangle)
             tip_height = size * 0.25
@@ -208,6 +224,8 @@ class Button:
             ]
             pygame.draw.polygon(screen, (80, 60, 40), tip_points)
             pygame.draw.polygon(screen, (40, 30, 20), tip_points, 4)
+            # Add anti-aliased edges
+            pygame.draw.aalines(screen, (40, 30, 20), True, tip_points, 1)
 
             # Graphite point
             graphite_height = tip_height * 0.4
@@ -217,6 +235,8 @@ class Button:
                 (int(x + body_width / 6), int(y + body_height / 2 + tip_height - graphite_height))
             ]
             pygame.draw.polygon(screen, (30, 30, 30), graphite_points)
+            # Add anti-aliased edges
+            pygame.draw.aalines(screen, (30, 30, 30), True, graphite_points, 1)
 
             # Eraser (larger pink rectangle at top)
             eraser_height = size * 0.18
@@ -232,10 +252,14 @@ class Button:
             pygame.draw.rect(screen, (200, 200, 200), band_rect)
             pygame.draw.rect(screen, (150, 150, 150), band_rect, 2)
 
-            # Shine lines on metal band
-            pygame.draw.line(screen, (240, 240, 240),
-                           (x - body_width / 3, y - body_height / 2 - band_height / 2),
-                           (x + body_width / 3, y - body_height / 2 - band_height / 2), 2)
+            # Shine lines on metal band with anti-aliasing
+            pygame.draw.aaline(screen, (240, 240, 240),
+                             (x - body_width / 3, y - body_height / 2 - band_height / 2),
+                             (x + body_width / 3, y - body_height / 2 - band_height / 2))
+            # Draw second line for thickness
+            pygame.draw.aaline(screen, (240, 240, 240),
+                             (x - body_width / 3, y - body_height / 2 - band_height / 2 + 1),
+                             (x + body_width / 3, y - body_height / 2 - band_height / 2 + 1))
 
         elif self.icon == "shapes":
             # Larger, filled shapes with thick outlines for clarity
@@ -343,22 +367,22 @@ class Button:
             pygame.draw.polygon(screen, color, cone_points)
             pygame.draw.polygon(screen, color, cone_points, line_width)
 
-            # Sound waves (4 clear curved arcs with thick lines)
+            # Sound waves (4 clear curved arcs with thick lines and anti-aliasing)
             for i in range(1, 5):
                 wave_x = int(x + size * 0.08 * i)
                 wave_radius = int(size * 0.15 * i)
                 wave_thickness = line_width - (i // 2)  # Slightly thinner for outer waves
 
-                # Draw smooth arc
+                # Draw smooth arc with 1 degree steps for smoothness
                 arc_points = []
-                for angle in range(-30, 31, 2):
+                for angle in range(-30, 31, 1):
                     rad = math.radians(angle)
                     px = int(wave_x + math.cos(rad) * wave_radius)
                     py = int(y + math.sin(rad) * wave_radius)
                     arc_points.append((px, py))
 
                 if len(arc_points) > 1:
-                    pygame.draw.lines(screen, color, False, arc_points, wave_thickness)
+                    pygame.draw.aalines(screen, color, False, arc_points)
 
             # Add glow effect
             if self.hovered:
@@ -385,21 +409,26 @@ class Button:
             pygame.draw.polygon(screen, color, cone_points)
             pygame.draw.polygon(screen, color, cone_points, line_width)
 
-            # Large, bold red X (6px width minimum)
+            # Large, bold red X (6px width minimum) with anti-aliasing
             x_offset = size * 0.3
             x_line_width = 7
             x_color = (255, 50, 50)
 
-            # Draw X with rounded ends
+            # Draw X with anti-aliased lines for thickness
             x_start = int(x + size * 0.05)
             x_end = int(x + size * 0.4)
 
-            pygame.draw.line(screen, x_color,
-                           (x_start, int(y - x_offset)),
-                           (x_end, int(y + x_offset)), x_line_width)
-            pygame.draw.line(screen, x_color,
-                           (x_start, int(y + x_offset)),
-                           (x_end, int(y - x_offset)), x_line_width)
+            # First diagonal line (top-left to bottom-right)
+            for i in range(x_line_width):
+                pygame.draw.aaline(screen, x_color,
+                                 (x_start, int(y - x_offset + i)),
+                                 (x_end, int(y + x_offset + i)))
+
+            # Second diagonal line (bottom-left to top-right)
+            for i in range(x_line_width):
+                pygame.draw.aaline(screen, x_color,
+                                 (x_start, int(y + x_offset - i)),
+                                 (x_end, int(y - x_offset - i)))
 
             # Add circles at X intersection for better look
             pygame.draw.circle(screen, x_color, (int(x + size * 0.225), int(y)), int(x_line_width * 0.8))
@@ -410,30 +439,30 @@ class Button:
             line_width = 5
             center_offset = size * 0.1
 
-            # Draw two curved arrows forming a circle with thick lines
-            # Top-right arc
+            # Draw two curved arrows forming a circle with thick lines and anti-aliasing
+            # Top-right arc (1 degree steps for smoothness)
             top_arc_points = []
-            for angle_deg in range(20, 165, 3):
+            for angle_deg in range(20, 165, 1):
                 angle = math.radians(angle_deg)
                 px = int(x + math.cos(angle) * radius)
                 py = int(y - center_offset + math.sin(angle) * radius)
                 top_arc_points.append((px, py))
 
             if len(top_arc_points) > 1:
-                pygame.draw.lines(screen, color, False, top_arc_points, line_width)
+                pygame.draw.aalines(screen, color, False, top_arc_points)
 
-            # Bottom-left arc
+            # Bottom-left arc (1 degree steps for smoothness)
             bottom_arc_points = []
-            for angle_deg in range(200, 345, 3):
+            for angle_deg in range(200, 345, 1):
                 angle = math.radians(angle_deg)
                 px = int(x + math.cos(angle) * radius)
                 py = int(y + center_offset + math.sin(angle) * radius)
                 bottom_arc_points.append((px, py))
 
             if len(bottom_arc_points) > 1:
-                pygame.draw.lines(screen, color, False, bottom_arc_points, line_width)
+                pygame.draw.aalines(screen, color, False, bottom_arc_points)
 
-            # Arrow heads (larger triangles)
+            # Arrow heads (larger triangles with anti-aliasing)
             arrow_size = size * 0.22
 
             # Top arrow (pointing left and down)
@@ -443,6 +472,7 @@ class Button:
                 (int(x - radius * 1.0), int(y - center_offset - radius * 0.85))
             ]
             pygame.draw.polygon(screen, color, top_arrow)
+            pygame.draw.aalines(screen, color, True, top_arrow, 1)
 
             # Bottom arrow (pointing right and up)
             bottom_arrow = [
@@ -451,6 +481,7 @@ class Button:
                 (int(x + radius * 1.0), int(y + center_offset + radius * 0.85))
             ]
             pygame.draw.polygon(screen, color, bottom_arrow)
+            pygame.draw.aalines(screen, color, True, bottom_arrow, 1)
 
             # Add glow for emphasis
             if self.hovered:
@@ -469,7 +500,7 @@ class Button:
             for i in range(line_width):
                 pygame.gfxdraw.circle(screen, int(x), int(y), center_radius - i, color)
 
-            # Sun rays (12 thick triangular rays)
+            # Sun rays (12 thick triangular rays with anti-aliasing)
             ray_length = size * 0.32
             ray_width = size * 0.12
 
@@ -486,7 +517,7 @@ class Button:
                 end_x = x + math.cos(angle) * outer_dist
                 end_y = y + math.sin(angle) * outer_dist
 
-                # Draw ray as a prominent triangle
+                # Draw ray as a prominent triangle with anti-aliased edges
                 perp_angle = angle + math.pi / 2
                 ray_points = [
                     (int(end_x), int(end_y)),
@@ -497,6 +528,7 @@ class Button:
                 ]
                 pygame.draw.polygon(screen, color, ray_points)
                 pygame.draw.polygon(screen, color, ray_points, 2)
+                pygame.draw.aalines(screen, color, True, ray_points, 1)
 
             # Add warm glow effect
             self._draw_glow(screen, int(x), int(y), center_radius + 5, (255, 220, 100), 3)
@@ -519,7 +551,7 @@ class Button:
             inner_radius = int(radius * 0.8)
             pygame.gfxdraw.filled_circle(screen, offset_x, int(y), inner_radius, self.color)
 
-            # Add stars around the moon for better visual
+            # Add stars around the moon for better visual with anti-aliasing
             star_positions = [
                 (int(x - radius * 0.9), int(y - radius * 0.7)),
                 (int(x - radius * 0.6), int(y + radius * 0.8)),
@@ -528,110 +560,133 @@ class Button:
 
             for star_x, star_y in star_positions:
                 star_size = 3
-                # Draw 4-pointed star
-                pygame.draw.line(screen, color, (star_x - star_size, star_y),
-                               (star_x + star_size, star_y), 3)
-                pygame.draw.line(screen, color, (star_x, star_y - star_size),
-                               (star_x, star_y + star_size), 3)
+                star_width = 3
+                # Draw 4-pointed star with anti-aliased lines for thickness
+                # Horizontal line
+                for i in range(star_width):
+                    pygame.draw.aaline(screen, color,
+                                     (star_x - star_size, star_y + i),
+                                     (star_x + star_size, star_y + i))
+                # Vertical line
+                for i in range(star_width):
+                    pygame.draw.aaline(screen, color,
+                                     (star_x + i, star_y - star_size),
+                                     (star_x + i, star_y + star_size))
 
             # Add glow effect
             self._draw_glow(screen, int(x), int(y), radius + 5, (200, 200, 255), 3)
 
         elif self.icon == "fullscreen":
-            # Draw fullscreen icon (4 corners pointing outward)
+            # Draw fullscreen icon (4 corners pointing outward) with anti-aliasing
             line_width = 5
             corner_size = size * 0.35
             gap = size * 0.15
 
             # Top-left corner
-            pygame.draw.line(screen, color,
-                           (int(x - size * 0.4), int(y - size * 0.4 + corner_size)),
-                           (int(x - size * 0.4), int(y - size * 0.4)),
-                           line_width)
-            pygame.draw.line(screen, color,
-                           (int(x - size * 0.4), int(y - size * 0.4)),
-                           (int(x - size * 0.4 + corner_size), int(y - size * 0.4)),
-                           line_width)
+            # Vertical line
+            for i in range(line_width):
+                pygame.draw.aaline(screen, color,
+                                 (int(x - size * 0.4 + i), int(y - size * 0.4 + corner_size)),
+                                 (int(x - size * 0.4 + i), int(y - size * 0.4)))
+            # Horizontal line
+            for i in range(line_width):
+                pygame.draw.aaline(screen, color,
+                                 (int(x - size * 0.4), int(y - size * 0.4 + i)),
+                                 (int(x - size * 0.4 + corner_size), int(y - size * 0.4 + i)))
 
             # Top-right corner
-            pygame.draw.line(screen, color,
-                           (int(x + size * 0.4), int(y - size * 0.4 + corner_size)),
-                           (int(x + size * 0.4), int(y - size * 0.4)),
-                           line_width)
-            pygame.draw.line(screen, color,
-                           (int(x + size * 0.4), int(y - size * 0.4)),
-                           (int(x + size * 0.4 - corner_size), int(y - size * 0.4)),
-                           line_width)
+            # Vertical line
+            for i in range(line_width):
+                pygame.draw.aaline(screen, color,
+                                 (int(x + size * 0.4 - i), int(y - size * 0.4 + corner_size)),
+                                 (int(x + size * 0.4 - i), int(y - size * 0.4)))
+            # Horizontal line
+            for i in range(line_width):
+                pygame.draw.aaline(screen, color,
+                                 (int(x + size * 0.4), int(y - size * 0.4 + i)),
+                                 (int(x + size * 0.4 - corner_size), int(y - size * 0.4 + i)))
 
             # Bottom-left corner
-            pygame.draw.line(screen, color,
-                           (int(x - size * 0.4), int(y + size * 0.4 - corner_size)),
-                           (int(x - size * 0.4), int(y + size * 0.4)),
-                           line_width)
-            pygame.draw.line(screen, color,
-                           (int(x - size * 0.4), int(y + size * 0.4)),
-                           (int(x - size * 0.4 + corner_size), int(y + size * 0.4)),
-                           line_width)
+            # Vertical line
+            for i in range(line_width):
+                pygame.draw.aaline(screen, color,
+                                 (int(x - size * 0.4 + i), int(y + size * 0.4 - corner_size)),
+                                 (int(x - size * 0.4 + i), int(y + size * 0.4)))
+            # Horizontal line
+            for i in range(line_width):
+                pygame.draw.aaline(screen, color,
+                                 (int(x - size * 0.4), int(y + size * 0.4 - i)),
+                                 (int(x - size * 0.4 + corner_size), int(y + size * 0.4 - i)))
 
             # Bottom-right corner
-            pygame.draw.line(screen, color,
-                           (int(x + size * 0.4), int(y + size * 0.4 - corner_size)),
-                           (int(x + size * 0.4), int(y + size * 0.4)),
-                           line_width)
-            pygame.draw.line(screen, color,
-                           (int(x + size * 0.4), int(y + size * 0.4)),
-                           (int(x + size * 0.4 - corner_size), int(y + size * 0.4)),
-                           line_width)
+            # Vertical line
+            for i in range(line_width):
+                pygame.draw.aaline(screen, color,
+                                 (int(x + size * 0.4 - i), int(y + size * 0.4 - corner_size)),
+                                 (int(x + size * 0.4 - i), int(y + size * 0.4)))
+            # Horizontal line
+            for i in range(line_width):
+                pygame.draw.aaline(screen, color,
+                                 (int(x + size * 0.4), int(y + size * 0.4 - i)),
+                                 (int(x + size * 0.4 - corner_size), int(y + size * 0.4 - i)))
 
             # Add glow effect if hovered
             if self.hovered:
                 self._draw_glow(screen, int(x), int(y), int(size * 0.5), color, 2)
 
         elif self.icon == "minimize":
-            # Draw minimize/exit fullscreen icon (4 corners pointing inward)
+            # Draw minimize/exit fullscreen icon (4 corners pointing inward) with anti-aliasing
             line_width = 5
             corner_size = size * 0.35
             offset = size * 0.25
 
             # Top-left corner (pointing inward)
-            pygame.draw.line(screen, color,
-                           (int(x - offset), int(y - offset)),
-                           (int(x - offset), int(y - offset + corner_size)),
-                           line_width)
-            pygame.draw.line(screen, color,
-                           (int(x - offset), int(y - offset)),
-                           (int(x - offset + corner_size), int(y - offset)),
-                           line_width)
+            # Vertical line
+            for i in range(line_width):
+                pygame.draw.aaline(screen, color,
+                                 (int(x - offset + i), int(y - offset)),
+                                 (int(x - offset + i), int(y - offset + corner_size)))
+            # Horizontal line
+            for i in range(line_width):
+                pygame.draw.aaline(screen, color,
+                                 (int(x - offset), int(y - offset + i)),
+                                 (int(x - offset + corner_size), int(y - offset + i)))
 
             # Top-right corner (pointing inward)
-            pygame.draw.line(screen, color,
-                           (int(x + offset), int(y - offset)),
-                           (int(x + offset), int(y - offset + corner_size)),
-                           line_width)
-            pygame.draw.line(screen, color,
-                           (int(x + offset), int(y - offset)),
-                           (int(x + offset - corner_size), int(y - offset)),
-                           line_width)
+            # Vertical line
+            for i in range(line_width):
+                pygame.draw.aaline(screen, color,
+                                 (int(x + offset - i), int(y - offset)),
+                                 (int(x + offset - i), int(y - offset + corner_size)))
+            # Horizontal line
+            for i in range(line_width):
+                pygame.draw.aaline(screen, color,
+                                 (int(x + offset), int(y - offset + i)),
+                                 (int(x + offset - corner_size), int(y - offset + i)))
 
             # Bottom-left corner (pointing inward)
-            pygame.draw.line(screen, color,
-                           (int(x - offset), int(y + offset)),
-                           (int(x - offset), int(y + offset - corner_size)),
-                           line_width)
-            pygame.draw.line(screen, color,
-                           (int(x - offset), int(y + offset)),
-                           (int(x - offset + corner_size), int(y + offset)),
-                           line_width)
+            # Vertical line
+            for i in range(line_width):
+                pygame.draw.aaline(screen, color,
+                                 (int(x - offset + i), int(y + offset)),
+                                 (int(x - offset + i), int(y + offset - corner_size)))
+            # Horizontal line
+            for i in range(line_width):
+                pygame.draw.aaline(screen, color,
+                                 (int(x - offset), int(y + offset - i)),
+                                 (int(x - offset + corner_size), int(y + offset - i)))
 
             # Bottom-right corner (pointing inward)
-            pygame.draw.line(screen, color,
-                           (int(x + offset), int(y + offset)),
-                           (int(x + offset), int(y + offset - corner_size)),
-                           line_width)
-            pygame.draw.line(screen, color,
-                           (int(x + offset), int(y + offset)),
-                           (int(x + offset - corner_size), int(y + offset)),
-                           line_width)
+            # Vertical line
+            for i in range(line_width):
+                pygame.draw.aaline(screen, color,
+                                 (int(x + offset - i), int(y + offset)),
+                                 (int(x + offset - i), int(y + offset - corner_size)))
+            # Horizontal line
+            for i in range(line_width):
+                pygame.draw.aaline(screen, color,
+                                 (int(x + offset), int(y + offset - i)),
+                                 (int(x + offset - corner_size), int(y + offset - i)))
 
             # Add glow effect if hovered
             if self.hovered:
@@ -746,44 +801,5 @@ class Button:
         Args:
             screen: The pygame surface to draw on.
         """
-        # Draw tooltip if hovered and tooltip is not empty
-        if self.hovered and self.tooltip:
-            # Render tooltip text with larger font
-            tooltip_surface = self.tooltip_font.render(self.tooltip, True, (255, 255, 255))
-            tooltip_rect = tooltip_surface.get_rect()
-
-            # Add more padding
-            padding = 12
-            tooltip_width = tooltip_rect.width + padding * 2
-            tooltip_height = tooltip_rect.height + padding * 2
-
-            # Position tooltip below the button with 8px gap
-            tooltip_x = self.rect.centerx - tooltip_width // 2
-            tooltip_y = self.rect.bottom + 8
-
-            # Ensure tooltip stays within screen bounds
-            screen_width = screen.get_width()
-            screen_height = screen.get_height()
-            if tooltip_x < 0:
-                tooltip_x = 0
-            elif tooltip_x + tooltip_width > screen_width:
-                tooltip_x = screen_width - tooltip_width
-            if tooltip_y + tooltip_height > screen_height:
-                tooltip_y = self.rect.top - tooltip_height - 8
-
-            # Create semi-transparent background surface with rounded corners
-            tooltip_bg = pygame.Surface((tooltip_width, tooltip_height), pygame.SRCALPHA)
-            pygame.draw.rect(tooltip_bg, (0, 0, 0, 220), tooltip_bg.get_rect(), border_radius=8)
-
-            # Draw tooltip background
-            screen.blit(tooltip_bg, (tooltip_x, tooltip_y))
-
-            # Draw subtle border
-            pygame.draw.rect(screen, (100, 100, 100),
-                           pygame.Rect(tooltip_x, tooltip_y, tooltip_width, tooltip_height),
-                           2, border_radius=8)
-
-            # Draw tooltip text
-            tooltip_text_rect = tooltip_surface.get_rect(
-                center=(tooltip_x + tooltip_width // 2, tooltip_y + tooltip_height // 2))
-            screen.blit(tooltip_surface, tooltip_text_rect)
+        # Tooltips disabled for cleaner UI
+        pass

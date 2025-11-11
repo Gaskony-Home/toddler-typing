@@ -35,41 +35,60 @@ class Settings:
         self.fullscreen: bool = False
         self.fps: int = 60
 
-        # Dark mode setting (default enabled)
-        self.dark_mode: bool = True
+        # Dark mode setting (default: light mode for warm, friendly feel)
+        self.dark_mode: bool = False
 
-        # Light color scheme (modern, professional, child-friendly)
+        # Light color scheme (warm, friendly, high-end educational app design)
         self.light_colors: Dict[str, Tuple[int, int, int]] = {
-            "background": (248, 250, 252),  # Slate-50 - Soft white-gray
-            "surface": (255, 255, 255),  # Pure white for cards/buttons
-            "primary": (168, 85, 247),  # Purple-500 - Playful purple
-            "primary_hover": (147, 51, 234),  # Purple-600
-            "secondary": (249, 115, 22),  # Orange-500 - Vibrant orange
-            "secondary_hover": (234, 88, 12),  # Orange-600
-            "success": (34, 197, 94),  # Green-500 - Modern green
-            "success_hover": (22, 163, 74),  # Green-600
-            "info": (59, 130, 246),  # Blue-500 - Bright blue
-            "text": (15, 23, 42),  # Slate-900 - Dark text
-            "text_secondary": (71, 85, 105),  # Slate-600
-            "white": (255, 255, 255),  # White
-            "border": (226, 232, 240),  # Slate-200
+            # Gradient background colors (soft teal to cream)
+            "bg_gradient_start": (230, 245, 250),  # Soft teal-blue
+            "bg_gradient_end": (255, 250, 240),  # Warm cream
+            "background": (242, 247, 250),  # Fallback solid color
+
+            # Card/Surface colors
+            "surface": (255, 255, 255),  # Pure white cards
+            "surface_hover": (255, 252, 248),  # Warm white on hover
+
+            # Vibrant, cheerful accent colors
+            "primary": (45, 200, 185),  # Bright turquoise
+            "primary_hover": (35, 180, 165),  # Deeper turquoise
+            "secondary": (255, 130, 120),  # Warm coral
+            "secondary_hover": (245, 110, 100),  # Deeper coral
+            "accent_yellow": (255, 205, 85),  # Cheerful yellow
+            "accent_pink": (255, 140, 180),  # Playful pink
+            "success": (100, 210, 130),  # Fresh green
+            "info": (110, 180, 255),  # Friendly blue
+
+            # Text colors
+            "text": (45, 55, 75),  # Soft dark blue-grey
+            "text_secondary": (105, 120, 140),  # Medium grey
+            "text_light": (160, 170, 190),  # Light grey
+            "white": (255, 255, 255),  # Pure white
+
+            # UI elements
+            "border": (230, 235, 245),  # Very subtle border
+            "shadow": (0, 0, 0, 30),  # Soft shadow (RGBA)
         }
 
-        # Dark color scheme (modern, professional)
+        # Dark color scheme (modern, professional - from styling guide)
         self.dark_colors: Dict[str, Tuple[int, int, int]] = {
-            "background": (15, 23, 42),  # Slate-900
-            "surface": (30, 41, 59),  # Slate-800
-            "primary": (192, 132, 252),  # Purple-400 - Lighter for dark
-            "primary_hover": (168, 85, 247),  # Purple-500
-            "secondary": (251, 146, 60),  # Orange-400 - Lighter for dark
-            "secondary_hover": (249, 115, 22),  # Orange-500
-            "success": (74, 222, 128),  # Green-400
-            "success_hover": (34, 197, 94),  # Green-500
-            "info": (96, 165, 250),  # Blue-400
-            "text": (248, 250, 252),  # Slate-50 - Light text
-            "text_secondary": (203, 213, 225),  # Slate-300
+            "background": (26, 26, 26),  # #1a1a1a - Dark charcoal
+            "surface": (45, 45, 45),  # #2d2d2d - Card background
+            "surface_light": (58, 58, 58),  # #3a3a3a - Lighter card variant
+            "primary": (20, 184, 166),  # #14B8A6 - Teal accent
+            "primary_hover": (17, 158, 142),  # Darker teal
+            "secondary": (251, 146, 60),  # #FB923C - Orange
+            "secondary_hover": (249, 115, 22),  # Darker orange
+            "success": (20, 184, 166),  # #14B8A6 - Teal (same as primary)
+            "success_hover": (17, 158, 142),  # Darker teal
+            "info": (59, 130, 246),  # #3B82F6 - Blue
+            "danger": (239, 68, 68),  # #EF4444 - Red
+            "purple": (168, 85, 247),  # #A855F7 - Purple accent
+            "text": (255, 255, 255),  # Pure white for titles
+            "text_secondary": (176, 176, 176),  # #B0B0B0 - Grey for subtitles
+            "text_tertiary": (128, 128, 128),  # #808080 - Darker grey for metadata
             "white": (255, 255, 255),  # White
-            "border": (71, 85, 105),  # Slate-600
+            "border": (71, 85, 105),  # Border color
         }
 
         # Set initial color scheme (dark mode by default)

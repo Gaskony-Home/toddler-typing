@@ -16,8 +16,6 @@ from ..ui.voice_controls import VoiceControls
 from ..audio.voice_manager import VoiceManager
 from ..gamification import ProgressManager, Celebration, StarDisplay
 from ..config.fonts import get_font_manager
-from ..gamification import ProgressManager, Celebration, StarDisplay
-from ..config.fonts import get_font_manager
 
 
 class ActivityMode(Enum):
@@ -64,11 +62,6 @@ class ColoringActivity:
         # Template surface (for outlines, dots, etc.)
         self.template = pygame.Surface((self.settings.screen_width, self.settings.screen_height))
         self.template.fill((255, 255, 255))
-        self.progress_manager = ProgressManager()
-        self.celebration = Celebration(settings.screen_width, settings.screen_height)
-        self.star_display = StarDisplay(settings.screen_width, settings.screen_height)
-        self.star_display.set_star_count(self.progress_manager.total_stars)
-
 
         # Gamification system
         self.progress_manager = ProgressManager()
@@ -164,8 +157,8 @@ class ColoringActivity:
 
     def _create_color_palette(self) -> None:
         """Create color selection buttons."""
-        button_size = 50
-        spacing = 10
+        button_size = 70  # Increased from 50px for better toddler usability
+        spacing = 15  # Increased from 10px for better spacing
         start_x = 20
         start_y = 150  # Adjusted to be below the mode heading
 
@@ -667,15 +660,6 @@ class ColoringActivity:
                         self.star_display.set_star_count(self.progress_manager.total_stars, animate=True)
                         if level_up:
                             self.celebration.show_level_up(self.progress_manager.current_level)
-                self.stroke_count += 1
-                if self.stroke_count % 50 == 0:  # Award star every 50 strokes
-                    star_awarded, level_up = self.progress_manager.award_star("coloring")
-                    if star_awarded:
-                        target_x, target_y = self.star_display.get_position()
-                        self.celebration.show_star_animation(target_x, target_y)
-                        self.star_display.set_star_count(self.progress_manager.total_stars, animate=True)
-                        if level_up:
-                            self.celebration.show_level_up(self.progress_manager.current_level)
 
     def update(self) -> None:
         """Update activity state."""
@@ -719,9 +703,6 @@ class ColoringActivity:
         counter_surface = counter_font.render(counter_text, True, (100, 100, 100))
         counter_rect = counter_surface.get_rect(center=(self.settings.screen_width // 2, 140))
         self.screen.blit(counter_surface, counter_rect)
-        self.star_display.draw(self.screen)
-        self.celebration.draw(self.screen)
-
 
         # Draw gamification elements
         self.star_display.draw(self.screen)
