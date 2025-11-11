@@ -40,6 +40,7 @@ class ToddlerTypingApp:
         self.screen: Optional[pygame.Surface] = None
         self.current_state = AppState.MENU
         self.current_activity: Optional[Any] = None
+        self.is_fullscreen = False
 
     def initialize(self) -> bool:
         """
@@ -75,10 +76,8 @@ class ToddlerTypingApp:
             
             pygame.display.set_caption("Toddler Typing")
             
-            # Maximize window if not fullscreen
-            if not self.settings.fullscreen:
-                pygame.display.toggle_fullscreen()  # This maximizes on Windows
-                pygame.display.toggle_fullscreen()  # Toggle back to keep decorations
+            # Update fullscreen state based on settings
+            self.is_fullscreen = self.settings.fullscreen
 
             # Update settings with actual screen size
             actual_width, actual_height = self.screen.get_size()
@@ -121,6 +120,38 @@ class ToddlerTypingApp:
         self.current_state = state
         self.current_activity = None  # Will be created on next frame
 
+    def toggle_fullscreen(self) -> None:
+        """Toggle between fullscreen and maximized window mode."""
+        self.is_fullscreen = not self.is_fullscreen
+        self.settings.fullscreen = self.is_fullscreen
+
+        if self.is_fullscreen:
+            # Switch to fullscreen mode
+            self.screen = pygame.display.set_mode(
+                (0, 0),
+                pygame.FULLSCREEN
+            )
+        else:
+            # Switch to windowed mode
+            info = pygame.display.Info()
+            width = int(info.current_w * 0.9)
+            height = int(info.current_h * 0.9)
+            self.screen = pygame.display.set_mode(
+                (width, height),
+                pygame.RESIZABLE
+            )
+
+        # Update settings with new screen size
+        actual_width, actual_height = self.screen.get_size()
+        self.settings.screen_width = actual_width
+        self.settings.screen_height = actual_height
+
+        # Recreate the current activity with new screen dimensions
+        self.current_activity = None
+
+        # Save settings
+        self.settings.save_config()
+
     def get_current_screen(self) -> Any:
         """
         Get the current screen/activity object.
@@ -131,7 +162,7 @@ class ToddlerTypingApp:
         if self.current_state == AppState.MENU:
             if not self.current_activity:
                 self.current_activity = MainMenu(
-                    self.screen, self.settings, self.switch_to_state, self.voice_manager
+                    self.screen, self.settings, self.switch_to_state, self.voice_manager, self.toggle_fullscreen
                 )
             return self.current_activity
 

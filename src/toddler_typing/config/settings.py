@@ -32,7 +32,7 @@ class Settings:
         # Display settings (0 = auto-detect native resolution)
         self.screen_width: int = 0
         self.screen_height: int = 0
-        self.fullscreen: bool = True
+        self.fullscreen: bool = False
         self.fps: int = 60
 
         # Dark mode setting (default enabled)
@@ -119,13 +119,29 @@ class Settings:
 
     def _get_validated_assets_dir(self) -> Path:
         """Get and validate the assets directory path."""
-        base_dir = Path(__file__).parent.parent.resolve()
-        assets_dir = base_dir / "assets"
+        import sys
+
+        # Check if running as a PyInstaller bundle
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            # Running as PyInstaller executable
+            # Assets are in _internal/assets relative to the executable
+            base_dir = Path(sys._MEIPASS).resolve()
+            assets_dir = base_dir / "assets"
+        else:
+            # Running from source
+            base_dir = Path(__file__).parent.parent.resolve()
+            assets_dir = base_dir / "assets"
 
         if not assets_dir.exists():
             logger.warning(f"Assets directory not found: {assets_dir}")
-            # Create it if it doesn't exist
-            assets_dir.mkdir(parents=True, exist_ok=True)
+            # Try alternative location for PyInstaller
+            if getattr(sys, 'frozen', False):
+                alt_dir = Path(sys.executable).parent / "_internal" / "assets"
+                if alt_dir.exists():
+                    return alt_dir
+            # Create it if it doesn't exist (only for source mode)
+            if not getattr(sys, 'frozen', False):
+                assets_dir.mkdir(parents=True, exist_ok=True)
 
         if not assets_dir.is_dir():
             raise RuntimeError(f"Assets path is not a directory: {assets_dir}")

@@ -304,12 +304,12 @@ class DrawingCanvas:
             if hasattr(button, 'brush_size'):
                 circle_radius = button.brush_size // 2
                 # Make sure the circle fits within the button
-                max_radius = min(button.width, button.height) // 2 - 5
+                max_radius = min(button.rect.width, button.rect.height) // 2 - 5
                 circle_radius = min(circle_radius, max_radius)
 
                 # Draw circle in the center of the button
-                center_x = button.x + button.width // 2
-                center_y = button.y + button.height // 2
+                center_x = button.rect.x + button.rect.width // 2
+                center_y = button.rect.y + button.rect.height // 2
                 pygame.draw.circle(self.screen, (240, 240, 240), (center_x, center_y), circle_radius)
 
         self.clear_button.draw(self.screen)
