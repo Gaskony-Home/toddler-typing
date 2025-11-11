@@ -48,11 +48,19 @@ def check_dependencies():
         return False
 
     try:
-        import pygame
-        print("  Pygame found")
+        import webview
+        print("  PyWebView found")
     except ImportError:
-        print("  ERROR: Pygame not found")
-        print("  Install with: pip install pygame")
+        print("  ERROR: PyWebView not found")
+        print("  Install with: pip install pywebview")
+        return False
+
+    try:
+        import pythonnet
+        print("  Pythonnet found")
+    except ImportError:
+        print("  ERROR: Pythonnet not found")
+        print("  Install with: pip install pythonnet")
         return False
 
     try:
@@ -72,17 +80,18 @@ def create_executable():
 
     # Get absolute paths for security
     project_root = Path(__file__).parent.resolve()
-    main_script = project_root / "launcher.py"
+    main_script = project_root / "run.py"
+    web_dir = project_root / "src" / "toddler_typing" / "web"
     assets_dir = project_root / "src" / "toddler_typing" / "assets"
-    icon_path = assets_dir / "images" / "icon.ico"
+    icon_path = assets_dir / "images" / "icon.ico" if (assets_dir / "images" / "icon.ico").exists() else None
 
     # Validate paths exist
     if not main_script.exists():
-        print(f"  ERROR: Launcher script not found: {main_script}")
+        print(f"  ERROR: Main script not found: {main_script}")
         return False
 
-    if not assets_dir.exists():
-        print(f"  ERROR: Assets directory not found: {assets_dir}")
+    if not web_dir.exists():
+        print(f"  ERROR: Web directory not found: {web_dir}")
         return False
 
     # Build command with validated absolute paths
@@ -96,8 +105,11 @@ def create_executable():
         "--windowed",  # No console window
         "--clean",
         "-y",  # Overwrite output directory without confirmation
-        f"--add-data={assets_dir}{os.pathsep}assets",
-        "--hidden-import=pygame",
+        f"--add-data={web_dir}{os.pathsep}web",  # Add web directory with HTML/CSS/JS
+        "--hidden-import=webview",
+        "--hidden-import=webview.platforms.winforms",
+        "--hidden-import=pythonnet",
+        "--hidden-import=clr",
         "--hidden-import=pynput",
         "--hidden-import=pynput.keyboard",
         "--hidden-import=pynput.keyboard._win32",
@@ -105,15 +117,30 @@ def create_executable():
         "--hidden-import=comtypes",
         "--hidden-import=toddler_typing",
         "--hidden-import=toddler_typing.main",
-        "--hidden-import=toddler_typing.activities",
-        "--hidden-import=toddler_typing.config",
-        "--collect-all=pygame",
+        "--hidden-import=toddler_typing.api",
+        "--hidden-import=toddler_typing.audio",
+        "--hidden-import=toddler_typing.audio.voice_manager",
+        "--hidden-import=toddler_typing.keyboard",
+        "--hidden-import=toddler_typing.keyboard.locker",
+        "--hidden-import=toddler_typing.gamification",
+        "--hidden-import=toddler_typing.gamification.progress_manager",
+        "--collect-all=webview",
+        "--collect-all=pythonnet",
+        # Exclude unnecessary modules
+        "--exclude-module=pygame",
+        "--exclude-module=tkinter",
+        "--exclude-module=_tkinter",
+        "--exclude-module=Tkinter",
+        "--exclude-module=tcl",
+        "--exclude-module=tk",
+        "--exclude-module=Tkconstants",
+        "--exclude-module=FixTk",
         f"--paths={project_root / 'src'}",  # Add src directory to Python path
         str(main_script),  # Use string of Path object for safety
     ]
 
     # Add icon if it exists
-    if icon_path.exists():
+    if icon_path and icon_path.exists():
         cmd.extend(["--icon", str(icon_path)])
 
     print(f"  Running PyInstaller with validated paths")

@@ -1,297 +1,161 @@
 """
 Main entry point for the Toddler Typing application.
 
-This module initializes the application, sets up the main menu,
-and handles the overall program flow.
+This module initializes the PyWebView-based application with HTML/CSS/JS frontend
+and Python backend for educational activities.
 """
 
 import sys
-import pygame
-from typing import Optional, Any
-from enum import Enum
+import logging
+import time
+from pathlib import Path
+from threading import Thread
 
-from .config.settings import Settings
-from .ui.main_menu import MainMenu
-from .keyboard.locker import KeyboardLocker
-from .audio.voice_manager import VoiceManager
+import webview
 
+from toddler_typing.api import ToddlerTypingAPI
+from toddler_typing.__version__ import __version__
 
-class AppState(Enum):
-    """Application states for different screens/activities."""
-
-    MENU = "menu"
-    LETTERS = "letters"
-    NUMBERS = "numbers"
-    LETTERS_NUMBERS = "letters_numbers"
-    COLORING = "coloring"
-    DRAWING = "drawing"
-    COLORS_SHAPES = "colors_shapes"
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 class ToddlerTypingApp:
-    """Main application class for Toddler Typing."""
+    """Main application class for Toddler Typing (PyWebView version)."""
 
-    def __init__(self) -> None:
+    def __init__(self):
         """Initialize the application."""
-        self.settings = Settings()
-        self.keyboard_locker: Optional[KeyboardLocker] = None
-        self.voice_manager: Optional[VoiceManager] = None
+        self.api = ToddlerTypingAPI()
+        self.window = None
         self.running = False
-        self.screen: Optional[pygame.Surface] = None
-        self.current_state = AppState.MENU
-        self.current_activity: Optional[Any] = None
-        self.is_fullscreen = False
+        self.exit_check_thread = None
 
-    def initialize(self) -> bool:
+        # Determine web directory path (handle both dev and PyInstaller)
+        if getattr(sys, 'frozen', False):
+            # Running as PyInstaller bundle
+            application_path = Path(sys._MEIPASS)
+            self.web_dir = application_path / "web"
+        else:
+            # Running in development
+            self.web_dir = Path(__file__).parent / "web"
+
+        self.index_html = self.web_dir / "index.html"
+
+        logger.info(f"Toddler Typing v{__version__} initializing...")
+        logger.info(f"Web directory: {self.web_dir}")
+
+    def _monitor_exit_combination(self):
         """
-        Initialize Pygame and application components.
+        Background thread to monitor exit combination.
 
-        Returns:
-            bool: True if initialization successful, False otherwise.
+        This thread checks if the exit key combination (Ctrl+Shift+Esc)
+        has been pressed and closes the application if detected.
         """
-        try:
-            pygame.init()
-            pygame.mixer.init()
+        logger.info("Exit combination monitor started")
 
-            # Set up display
-            display_flags = pygame.FULLSCREEN if self.settings.fullscreen else pygame.RESIZABLE
-            
-            # Use auto-detect for screen dimensions if set to 0
-            if self.settings.screen_width == 0 or self.settings.screen_height == 0:
-                if self.settings.fullscreen:
-                    # In fullscreen, use native resolution
-                    self.screen = pygame.display.set_mode((0, 0), display_flags)
-                else:
-                    # In windowed mode, start with reasonable size then maximize
-                    info = pygame.display.Info()
-                    # Use 90% of screen to leave room for taskbar
-                    width = int(info.current_w * 0.9)
-                    height = int(info.current_h * 0.9)
-                    self.screen = pygame.display.set_mode((width, height), display_flags)
-            else:
-                self.screen = pygame.display.set_mode(
-                    (self.settings.screen_width, self.settings.screen_height),
-                    display_flags,
-                )
-            
-            pygame.display.set_caption("Toddler Typing")
-            
-            # Update fullscreen state based on settings
-            self.is_fullscreen = self.settings.fullscreen
+        while self.running:
+            time.sleep(0.1)  # Check every 100ms
 
-            # Update settings with actual screen size
-            actual_width, actual_height = self.screen.get_size()
-            self.settings.screen_width = actual_width
-            self.settings.screen_height = actual_height
-            
-            print(f"Screen resolution: {actual_width}x{actual_height}")
-
-            # Initialize keyboard locker if enabled (Windows only)
-            if self.settings.enable_keyboard_lock and sys.platform == "win32":
+            if self.api.check_exit_combination():
+                logger.info("Exit combination detected, closing application")
                 try:
-                    self.keyboard_locker = KeyboardLocker(
-                        exit_combination=self.settings.exit_combination
-                    )
-                    self.keyboard_locker.start()
+                    if self.window:
+                        self.window.destroy()
                 except Exception as e:
-                    print(f"Could not start keyboard locker: {e}")
-                    print("Continuing without keyboard lock.")
+                    logger.error(f"Error destroying window: {e}")
+                break
 
-            # Initialize voice manager
-            try:
-                self.voice_manager = VoiceManager()
-            except Exception as e:
-                print(f"Could not start voice manager: {e}")
-                print("Continuing without voice support.")
+    def on_loaded(self):
+        """
+        Callback when the web view has finished loading.
 
-            return True
+        This is called after the HTML/CSS/JS is fully loaded and the
+        JavaScript API bridge is ready.
+        """
+        logger.info("Web view loaded successfully")
+
+        # Start exit combination monitoring thread if on Windows
+        if sys.platform == "win32":
+            self.running = True
+            self.exit_check_thread = Thread(target=self._monitor_exit_combination, daemon=True)
+            self.exit_check_thread.start()
+            logger.info("Exit monitoring thread started (Ctrl+Shift+Esc to exit)")
+
+    def on_closing(self):
+        """
+        Callback when the window is being closed.
+
+        This ensures proper cleanup of resources before exit.
+        """
+        logger.info("Application closing, cleaning up...")
+        self.running = False
+
+        # Clean up API resources
+        self.api.cleanup()
+
+        logger.info("Cleanup complete")
+        return True  # Allow window to close
+
+    def run(self):
+        """Run the main application."""
+        try:
+            # Verify HTML file exists
+            if not self.index_html.exists():
+                logger.error(f"HTML file not found: {self.index_html}")
+                print(f"ERROR: HTML file not found at {self.index_html}")
+                print("Please ensure the web directory and index.html are in the correct location.")
+                sys.exit(1)
+
+            logger.info(f"Loading HTML from: {self.index_html}")
+
+            # Create the PyWebView window
+            self.window = webview.create_window(
+                title="Toddler Typing",
+                url=str(self.index_html),
+                js_api=self.api,
+                width=1280,
+                height=800,
+                resizable=True,
+                fullscreen=False,
+                min_size=(800, 600),
+                background_color='#f8f9fa'
+            )
+
+            # Register event callbacks
+            self.window.events.loaded += self.on_loaded
+            self.window.events.closing += self.on_closing
+
+            logger.info("Starting PyWebView...")
+
+            # Start the webview (blocking call)
+            webview.start(debug=False)
 
         except Exception as e:
-            print(f"Error initializing application: {e}")
-            return False
-
-    def switch_to_state(self, state: AppState) -> None:
-        """
-        Switch to a different application state.
-
-        Args:
-            state: The state to switch to.
-        """
-        self.current_state = state
-        self.current_activity = None  # Will be created on next frame
-
-    def toggle_fullscreen(self) -> None:
-        """Toggle between fullscreen and maximized window mode."""
-        self.is_fullscreen = not self.is_fullscreen
-        self.settings.fullscreen = self.is_fullscreen
-
-        if self.is_fullscreen:
-            # Switch to fullscreen mode
-            self.screen = pygame.display.set_mode(
-                (0, 0),
-                pygame.FULLSCREEN
-            )
-        else:
-            # Switch to windowed mode
-            info = pygame.display.Info()
-            width = int(info.current_w * 0.9)
-            height = int(info.current_h * 0.9)
-            self.screen = pygame.display.set_mode(
-                (width, height),
-                pygame.RESIZABLE
-            )
-
-        # Update settings with new screen size
-        actual_width, actual_height = self.screen.get_size()
-        self.settings.screen_width = actual_width
-        self.settings.screen_height = actual_height
-
-        # Recreate the current activity with new screen dimensions
-        self.current_activity = None
-
-        # Save settings
-        self.settings.save_config()
-
-    def get_current_screen(self) -> Any:
-        """
-        Get the current screen/activity object.
-
-        Returns:
-            The current screen object (MainMenu or activity).
-        """
-        if self.current_state == AppState.MENU:
-            if not self.current_activity:
-                self.current_activity = MainMenu(
-                    self.screen, self.settings, self.switch_to_state, self.voice_manager, self.toggle_fullscreen
-                )
-            return self.current_activity
-
-        elif self.current_state == AppState.LETTERS:
-            if not self.current_activity:
-                from .educational.letters import LettersActivity
-
-                self.current_activity = LettersActivity(
-                    self.screen, self.settings, self.switch_to_state, self.voice_manager
-                )
-            return self.current_activity
-
-        elif self.current_state == AppState.NUMBERS:
-            if not self.current_activity:
-                from .educational.numbers import NumbersActivity
-
-                self.current_activity = NumbersActivity(
-                    self.screen, self.settings, self.switch_to_state, self.voice_manager
-                )
-            return self.current_activity
-
-        elif self.current_state == AppState.LETTERS_NUMBERS:
-            if not self.current_activity:
-                from .educational.letters_numbers import LettersNumbersActivity
-
-                self.current_activity = LettersNumbersActivity(
-                    self.screen, self.settings, self.switch_to_state, self.voice_manager
-                )
-            return self.current_activity
-
-        elif self.current_state == AppState.DRAWING:
-            if not self.current_activity:
-                from .drawing.canvas import DrawingCanvas
-
-                self.current_activity = DrawingCanvas(
-                    self.screen, self.settings, self.switch_to_state, self.voice_manager
-                )
-            return self.current_activity
-
-        elif self.current_state == AppState.COLORING:
-            if not self.current_activity:
-                from .educational.coloring import ColoringActivity
-
-                self.current_activity = ColoringActivity(
-                    self.screen, self.settings, self.switch_to_state, self.voice_manager
-                )
-            return self.current_activity
-
-        elif self.current_state == AppState.COLORS_SHAPES:
-            if not self.current_activity:
-                from .educational.colors_shapes import ColorsShapesActivity
-
-                self.current_activity = ColorsShapesActivity(
-                    self.screen, self.settings, self.switch_to_state, self.voice_manager
-                )
-            return self.current_activity
-
-    def run(self) -> None:
-        """Run the main application loop."""
-        if not self.initialize():
+            logger.error(f"Error running application: {e}", exc_info=True)
+            print(f"ERROR: Failed to start application: {e}")
             sys.exit(1)
 
-        self.running = True
-        clock = pygame.time.Clock()
-
-        try:
-            while self.running:
-                # Get current screen
-                current_screen = self.get_current_screen()
-
-                # Handle events
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        self.running = False
-
-                    # Handle window resize
-                    if event.type == pygame.VIDEORESIZE:
-                        self.screen = pygame.display.set_mode(
-                            (event.w, event.h),
-                            pygame.RESIZABLE
-                        )
-                        self.settings.screen_width = event.w
-                        self.settings.screen_height = event.h
-
-                    # Check for exit combination
-                    if self.keyboard_locker and self.keyboard_locker.should_exit():
-                        self.running = False
-
-                    # Allow ESC key to exit if keyboard lock is disabled
-                    if (
-                        not self.settings.enable_keyboard_lock
-                        and event.type == pygame.KEYDOWN
-                        and event.key == pygame.K_ESCAPE
-                    ):
-                        # If in an activity, go back to menu; if in menu, exit
-                        if self.current_state == AppState.MENU:
-                            self.running = False
-                        else:
-                            self.switch_to_state(AppState.MENU)
-
-                    current_screen.handle_event(event)
-
-                # Update
-                current_screen.update()
-
-                # Draw
-                current_screen.draw()
-                pygame.display.flip()
-
-                # Maintain frame rate
-                clock.tick(self.settings.fps)
-
         finally:
-            self.cleanup()
-
-    def cleanup(self) -> None:
-        """Clean up resources before exiting."""
-        if self.voice_manager:
-            self.voice_manager.cleanup()
-        if self.keyboard_locker:
-            self.keyboard_locker.stop()
-
-        pygame.quit()
+            logger.info("Application terminated")
 
 
-def main() -> None:
+def main():
     """Main entry point for the application."""
-    app = ToddlerTypingApp()
-    app.run()
+    try:
+        logger.info(f"Starting Toddler Typing v{__version__}")
+        app = ToddlerTypingApp()
+        app.run()
+    except KeyboardInterrupt:
+        logger.info("Application interrupted by user")
+        sys.exit(0)
+    except Exception as e:
+        logger.error(f"Fatal error: {e}", exc_info=True)
+        print(f"FATAL ERROR: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

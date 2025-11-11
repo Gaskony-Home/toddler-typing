@@ -1,4 +1,5 @@
 # Build dependencies for creating portable executable
+# Last updated: 2025-11-11
 -r requirements.txt
 
-pyinstaller>=6.0.0
+pyinstaller==6.16.0

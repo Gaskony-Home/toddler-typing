@@ -21,16 +21,25 @@ class FontManager:
         # Font cache to avoid reloading
         self._font_cache: Dict[tuple, pygame.font.Font] = {}
 
-        # Load custom font paths
+        # Load custom font paths - using Fredoka (Nunito has pygame compatibility issues)
         self.fredoka_regular = self.fonts_dir / "Fredoka-Regular.ttf"
         self.fredoka_bold = self.fonts_dir / "Fredoka-Bold.ttf"
 
-        # Check if fonts exist and are compatible
-        self.has_custom_fonts = False  # Disabled due to pygame compatibility issues
-        # self.has_custom_fonts = self.fredoka_regular.exists() and self.fredoka_bold.exists()
+        # Check if fonts exist
+        fonts_exist = (
+            self.fredoka_regular.exists() and
+            self.fredoka_bold.exists()
+        )
 
-        if not self.has_custom_fonts:
-            print(f"Info: Using default pygame font (custom fonts disabled for compatibility)")
+        # Temporarily disable custom fonts due to pygame render() NULL pointer issues
+        # Will need to investigate font file compatibility or try alternative font sources
+        self.has_custom_fonts = False
+
+        if fonts_exist:
+            print(f"Info: Custom fonts found but disabled due to compatibility issues")
+            print(f"Info: Using default pygame font with anti-aliasing for crisp rendering")
+        else:
+            print(f"Info: Using default pygame font (custom fonts not found at {self.fonts_dir})")
 
     def get_font(self, size: int, bold: bool = False) -> pygame.font.Font:
         """
@@ -51,20 +60,28 @@ class FontManager:
 
         # Load font
         if self.has_custom_fonts:
+            # Use Fredoka Bold for bold and large titles, Regular otherwise
             font_path = self.fredoka_bold if bold else self.fredoka_regular
+
             try:
                 font = pygame.font.Font(str(font_path), size)
+                if font is None:
+                    raise ValueError(f"Font loaded as None from {font_path}")
                 self._font_cache[cache_key] = font
                 return font
             except Exception as e:
-                print(f"Error loading custom font: {e}")
+                print(f"Error loading custom Fredoka font from {font_path}: {e}")
                 # Fall back to default font
                 font = pygame.font.Font(None, size)
+                if font is None:
+                    raise ValueError("Default font is also None!")
                 self._font_cache[cache_key] = font
                 return font
         else:
             # Use default pygame font
             font = pygame.font.Font(None, size)
+            if font is None:
+                raise ValueError("Default font loaded as None!")
             self._font_cache[cache_key] = font
             return font
 

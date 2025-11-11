@@ -5,6 +5,7 @@ This module provides an interactive activity for learning colors and shapes.
 """
 
 import pygame
+import pygame.gfxdraw
 import random
 from typing import Tuple, List, Callable, Optional
 
@@ -70,7 +71,8 @@ class ColorsShapesActivity:
         # Grid configuration (2 rows x 3 columns)
         self.grid_rows = 2
         self.grid_cols = 3
-        self.shape_size = 120  # Size for drawing shapes
+        # Responsive shape size based on screen height
+        self.shape_size = min(180, int(self.settings.screen_height * 0.12))
 
         # Game state
         self.shape_options: List[ShapeOption] = []
@@ -154,7 +156,7 @@ class ColorsShapesActivity:
     def draw_shape(self, surface: pygame.Surface, shape_type: str, color: Tuple[int, int, int],
                    center_x: int, center_y: int, size: int) -> None:
         """
-        Draw a shape at the specified position.
+        Draw a shape at the specified position with anti-aliasing.
 
         Args:
             surface: Surface to draw on.
@@ -165,7 +167,9 @@ class ColorsShapesActivity:
             size: Size of the shape.
         """
         if shape_type == "circle":
-            pygame.draw.circle(surface, color, (center_x, center_y), size)
+            # Anti-aliased filled circle
+            pygame.gfxdraw.filled_circle(surface, center_x, center_y, size, color)
+            pygame.gfxdraw.aacircle(surface, center_x, center_y, size, color)
         elif shape_type == "square":
             rect = pygame.Rect(0, 0, size * 2, size * 2)
             rect.center = (center_x, center_y)
@@ -177,6 +181,8 @@ class ColorsShapesActivity:
                 (center_x + size, center_y + size),
             ]
             pygame.draw.polygon(surface, color, points)
+            # Add anti-aliased edges
+            pygame.draw.aalines(surface, color, True, points, 1)
         elif shape_type == "star":
             # Draw a 5-pointed star
             points = []
@@ -187,6 +193,8 @@ class ColorsShapesActivity:
                 y = center_y + radius * pygame.math.Vector2(1, 0).rotate(angle).y
                 points.append((x, y))
             pygame.draw.polygon(surface, color, points)
+            # Add anti-aliased edges
+            pygame.draw.aalines(surface, color, True, points, 1)
 
     def handle_event(self, event: pygame.event.Event) -> None:
         """
@@ -233,10 +241,22 @@ class ColorsShapesActivity:
             if self.success_flash == 0:
                 # Flash complete, generate new shapes
                 self.generate_new_shapes()
-        
+
         # Update gamification components
         self.celebration.update()
         self.star_display.update()
+
+    def _draw_gradient_background(self) -> None:
+        """Draw smooth gradient background."""
+        start_color = self.settings.colors.get("bg_gradient_start", self.settings.colors["background"])
+        end_color = self.settings.colors.get("bg_gradient_end", self.settings.colors["background"])
+
+        # Create vertical gradient
+        for y in range(self.settings.screen_height):
+            # Calculate blend ratio
+            ratio = y / self.settings.screen_height
+            color = tuple(int(start_color[i] * (1 - ratio) + end_color[i] * ratio) for i in range(3))
+            pygame.draw.line(self.screen, color, (0, y), (self.settings.screen_width, y))
 
     def draw(self) -> None:
         """Draw the colors and shapes activity."""
@@ -244,7 +264,7 @@ class ColorsShapesActivity:
         if self.success_flash > 0:
             self.screen.fill((0, 200, 0))  # Green flash
         else:
-            self.screen.fill(self.settings.colors["background"])
+            self._draw_gradient_background()
 
         # Draw instruction text
         if self.target_index < len(self.shape_options):

@@ -1,73 +1,27 @@
 @echo off
-REM Force Rebuild Script - Handles locked dist folder
-REM This script aggressively cleans and rebuilds the application
-
-echo ================================================
-echo TODDLER TYPING - FORCE REBUILD
-echo ================================================
-echo.
-echo This will forcefully clean and rebuild the application.
+echo Forcing rebuild of Toddler Typing...
 echo.
 
-REM Kill any running Python processes
-echo Step 1: Killing all Python processes...
-taskkill /F /IM python.exe /T >nul 2>&1
-taskkill /F /IM pythonw.exe /T >nul 2>&1
-timeout /t 2 >nul
-
-REM Kill the exe if running
-echo Step 2: Killing toddler-typing.exe if running...
-taskkill /F /IM toddler-typing.exe /T >nul 2>&1
-timeout /t 2 >nul
-
-REM Restart Windows Explorer to release file handles
-echo Step 3: Restarting Windows Explorer...
+echo Step 1: Stopping Explorer to release file locks...
 taskkill /F /IM explorer.exe >nul 2>&1
-timeout /t 2 >nul
+
+echo Step 2: Waiting for file locks to release...
+timeout /t 3 /nobreak >nul
+
+echo Step 3: Removing dist directory...
+rmdir /S /Q dist 2>nul
+rmdir /S /Q build 2>nul
+del /Q *.spec 2>nul
+
+echo Step 4: Restarting Explorer...
 start explorer.exe
-timeout /t 3 >nul
 
-REM Try to delete dist folder
-echo Step 4: Removing old dist folder...
-rmdir /S /Q dist >nul 2>&1
-rmdir /S /Q build >nul 2>&1
-timeout /t 1 >nul
+echo Step 5: Waiting for Explorer to start...
+timeout /t 2 /nobreak >nul
 
-REM Check if dist was deleted
-if exist dist (
-    echo WARNING: Could not delete dist folder completely
-    echo This is OK - PyInstaller will try to work around it
-    echo.
-) else (
-    echo SUCCESS: Old build files removed
-    echo.
-)
+echo Step 6: Running build...
+"C:\Users\Gaskin\AppData\Local\Programs\Python\Python312\python.exe" build.py
 
-REM Run the build
-echo Step 5: Building new executable...
 echo.
-python build.py
-
-if %ERRORLEVEL% EQU 0 (
-    echo.
-    echo ================================================
-    echo BUILD COMPLETE!
-    echo ================================================
-    echo.
-    echo The desktop shortcut has been updated.
-    echo You can now use it to run the latest version.
-    echo.
-) else (
-    echo.
-    echo ================================================
-    echo BUILD FAILED
-    echo ================================================
-    echo.
-    echo If the dist folder is still locked, please:
-    echo 1. Close all File Explorer windows
-    echo 2. Restart your computer
-    echo 3. Run this script again
-    echo.
-)
-
-pause
+echo Build complete! Press any key to exit...
+pause >nul

@@ -397,11 +397,11 @@ class Celebration:
         text = "LEVEL UP!"
         text_surface = self.font_large.render(text, True, (255, 255, 255))
 
-        # Scale the text
+        # Scale the text with smoothscale for anti-aliased quality
         if scale != 1.0:
             new_width = int(text_surface.get_width() * scale)
             new_height = int(text_surface.get_height() * scale)
-            text_surface = pygame.transform.scale(text_surface, (new_width, new_height))
+            text_surface = pygame.transform.smoothscale(text_surface, (new_width, new_height))
 
         # Apply alpha
         text_surface.set_alpha(alpha)
@@ -427,7 +427,7 @@ class Celebration:
         if scale != 1.0:
             new_width = int(level_surface.get_width() * scale)
             new_height = int(level_surface.get_height() * scale)
-            level_surface = pygame.transform.scale(level_surface, (new_width, new_height))
+            level_surface = pygame.transform.smoothscale(level_surface, (new_width, new_height))
 
         level_surface.set_alpha(alpha)
         level_rect = level_surface.get_rect(center=(self.screen_width / 2, self.screen_height / 2 + 50))

@@ -44,13 +44,13 @@ class MainMenu:
         self.toggle_fullscreen_callback = toggle_fullscreen
         self.cards: List[ActivityCard] = []
 
-        # Title font
-        self.title_font = get_font_manager().get_font(120, bold=True)
+        # Title font - larger and more playful
+        self.title_font = get_font_manager().get_font(140, bold=True)
         self.title_text = "Let's Play!"
         self.title_color = self.settings.colors["primary"]
 
-        # Version display font
-        self.version_font = get_font_manager().get_font(24)
+        # Version display font - smaller and more subtle
+        self.version_font = get_font_manager().get_font(18)
         self.version_text = f"v{__version__}"
 
         # Dark mode toggle button
@@ -77,7 +77,7 @@ class MainMenu:
         # Grid configuration
         cols = 2
         rows = 2
-        card_spacing = 40
+        card_spacing = 50  # More comfortable spacing
 
         # Calculate card size
         card_width = (available_width - (card_spacing * (cols - 1))) // cols
@@ -120,83 +120,80 @@ class MainMenu:
                 color,
                 icon,
                 on_click=callback,
+                base_color=self.settings.colors["surface"],
             )
             self.cards.append(card)
 
     def _create_dark_mode_button(self) -> None:
-        """Create dark mode toggle button in top-right area."""
-        button_width = 120
-        button_height = 80
-        # Position with 20px margin from right edge
-        x_pos = self.settings.screen_width - button_width - 20
+        """Create modern circular dark mode toggle."""
+        button_size = 60
+        x_pos = self.settings.screen_width - button_size - 20
         y_pos = 20
 
-        # Determine initial button text based on current mode
-        button_text = "Dark" if not self.settings.dark_mode else "Light"
-        # Determine initial icon based on current mode
         button_icon = "sun" if not self.settings.dark_mode else "moon"
 
         self.dark_mode_button = Button(
             x_pos,
             y_pos,
-            button_width,
-            button_height,
-            button_text,
-            self.settings.colors["secondary"],
+            button_size,
+            button_size,
+            "",  # No text - icon only
+            self.settings.colors["surface"],  # White/surface background
             on_click=self._toggle_dark_mode,
             tooltip="Toggle between light and dark mode",
-            font_size=36,
+            font_size=32,
             icon=button_icon,
+            text_color=self.settings.colors["primary"]  # Icon color
         )
 
     def _create_fullscreen_button(self) -> None:
-        """Create fullscreen toggle button in top-left area."""
+        """Create modern circular fullscreen toggle."""
         if not self.toggle_fullscreen_callback:
             return
 
-        button_width = 120
-        button_height = 80
-        # Position with 20px margin from left edge
+        button_size = 60
         x_pos = 20
         y_pos = 20
 
-        # Determine initial icon based on current fullscreen state
         button_icon = "minimize" if self.settings.fullscreen else "fullscreen"
 
         self.fullscreen_button = Button(
             x_pos,
             y_pos,
-            button_width,
-            button_height,
-            "",  # No text, just icon
-            self.settings.colors["primary"],
+            button_size,
+            button_size,
+            "",  # No text - icon only
+            self.settings.colors["surface"],  # White/surface background
             on_click=self._toggle_fullscreen,
             tooltip="Toggle fullscreen mode",
-            font_size=36,
+            font_size=32,
             icon=button_icon,
+            text_color=self.settings.colors["primary"]  # Icon color
         )
 
     def _toggle_dark_mode(self) -> None:
         """Toggle dark mode and update button appearance."""
         self.settings.toggle_dark_mode()
 
-        # Update button text
-        button_text = "Dark" if not self.settings.dark_mode else "Light"
-        self.dark_mode_button.text = button_text
-
         # Update button icon
         button_icon = "sun" if not self.settings.dark_mode else "moon"
         self.dark_mode_button.icon = button_icon
 
-        # Update button color
-        self.dark_mode_button.color = self.settings.colors["secondary"]
+        # Update button colors to maintain surface background
+        self.dark_mode_button.color = self.settings.colors["surface"]
+        self.dark_mode_button.text_color = self.settings.colors["primary"]
 
-        # Update fullscreen button color if it exists
+        # Update fullscreen button colors if it exists
         if self.fullscreen_button:
-            self.fullscreen_button.color = self.settings.colors["primary"]
+            self.fullscreen_button.color = self.settings.colors["surface"]
+            self.fullscreen_button.text_color = self.settings.colors["primary"]
 
         # Update title color
         self.title_color = self.settings.colors["primary"]
+
+        # Update all cards with new base color
+        for card in self.cards:
+            card.base_color = self.settings.colors["surface"]
 
         # Save the settings to persist dark mode preference
         self.settings.save_config()
@@ -257,22 +254,39 @@ class MainMenu:
 
     def update(self) -> None:
         """Update menu state (for animations, etc.)."""
-        pass
+        # Update all cards for smooth animations
+        for card in self.cards:
+            card.update()
+
+    def _draw_gradient_background(self) -> None:
+        """Draw smooth gradient background."""
+        start_color = self.settings.colors.get("bg_gradient_start", self.settings.colors["background"])
+        end_color = self.settings.colors.get("bg_gradient_end", self.settings.colors["background"])
+
+        # Create vertical gradient
+        for y in range(self.settings.screen_height):
+            # Calculate blend ratio
+            ratio = y / self.settings.screen_height
+            color = tuple(int(start_color[i] * (1 - ratio) + end_color[i] * ratio) for i in range(3))
+            pygame.draw.line(self.screen, color, (0, y), (self.settings.screen_width, y))
 
     def draw(self) -> None:
         """Draw the main menu."""
-        # Clear screen with background color
-        self.screen.fill(self.settings.colors["background"])
+        # Draw gradient background
+        self._draw_gradient_background()
 
-        # Draw title
-        title_y = 80  # Title position
+        # Draw title with more top padding and improved shadow
+        title_y = 90  # More top padding for breathing room
         title_surface = self.title_font.render(self.title_text, True, self.title_color)
         title_rect = title_surface.get_rect(center=(self.settings.screen_width // 2, title_y))
 
-        # Add shadow effect to title
-        shadow_surface = self.title_font.render(self.title_text, True, (0, 0, 0))
+        # Add softer, colored shadow effect to title
+        shadow_color = self.settings.colors.get("shadow", (100, 100, 100, 128))
+        if len(shadow_color) == 3:  # Ensure we have RGB, add some transparency
+            shadow_color = shadow_color + (128,)
+        shadow_surface = self.title_font.render(self.title_text, True, shadow_color[:3])
         shadow_rect = shadow_surface.get_rect(
-            center=(self.settings.screen_width // 2 + 4, title_y + 4)
+            center=(self.settings.screen_width // 2 + 3, title_y + 3)
         )
         self.screen.blit(shadow_surface, shadow_rect)
         self.screen.blit(title_surface, title_rect)
@@ -289,14 +303,14 @@ class MainMenu:
         if self.fullscreen_button:
             self.fullscreen_button.draw(self.screen)
 
-        # Draw version number in bottom left
+        # Draw version number in bottom-right corner (subtle and professional)
         version_surface = self.version_font.render(
             self.version_text,
             True,
-            self.settings.colors["text_secondary"]
+            self.settings.colors.get("text_light", self.settings.colors["text_secondary"])
         )
         version_rect = version_surface.get_rect(
-            bottomleft=(20, self.settings.screen_height - 20)
+            bottomright=(self.settings.screen_width - 10, self.settings.screen_height - 10)
         )
         self.screen.blit(version_surface, version_rect)
 
