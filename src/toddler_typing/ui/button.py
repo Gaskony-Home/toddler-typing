@@ -537,6 +537,106 @@ class Button:
             # Add glow effect
             self._draw_glow(screen, int(x), int(y), radius + 5, (200, 200, 255), 3)
 
+        elif self.icon == "fullscreen":
+            # Draw fullscreen icon (4 corners pointing outward)
+            line_width = 5
+            corner_size = size * 0.35
+            gap = size * 0.15
+
+            # Top-left corner
+            pygame.draw.line(screen, color,
+                           (int(x - size * 0.4), int(y - size * 0.4 + corner_size)),
+                           (int(x - size * 0.4), int(y - size * 0.4)),
+                           line_width)
+            pygame.draw.line(screen, color,
+                           (int(x - size * 0.4), int(y - size * 0.4)),
+                           (int(x - size * 0.4 + corner_size), int(y - size * 0.4)),
+                           line_width)
+
+            # Top-right corner
+            pygame.draw.line(screen, color,
+                           (int(x + size * 0.4), int(y - size * 0.4 + corner_size)),
+                           (int(x + size * 0.4), int(y - size * 0.4)),
+                           line_width)
+            pygame.draw.line(screen, color,
+                           (int(x + size * 0.4), int(y - size * 0.4)),
+                           (int(x + size * 0.4 - corner_size), int(y - size * 0.4)),
+                           line_width)
+
+            # Bottom-left corner
+            pygame.draw.line(screen, color,
+                           (int(x - size * 0.4), int(y + size * 0.4 - corner_size)),
+                           (int(x - size * 0.4), int(y + size * 0.4)),
+                           line_width)
+            pygame.draw.line(screen, color,
+                           (int(x - size * 0.4), int(y + size * 0.4)),
+                           (int(x - size * 0.4 + corner_size), int(y + size * 0.4)),
+                           line_width)
+
+            # Bottom-right corner
+            pygame.draw.line(screen, color,
+                           (int(x + size * 0.4), int(y + size * 0.4 - corner_size)),
+                           (int(x + size * 0.4), int(y + size * 0.4)),
+                           line_width)
+            pygame.draw.line(screen, color,
+                           (int(x + size * 0.4), int(y + size * 0.4)),
+                           (int(x + size * 0.4 - corner_size), int(y + size * 0.4)),
+                           line_width)
+
+            # Add glow effect if hovered
+            if self.hovered:
+                self._draw_glow(screen, int(x), int(y), int(size * 0.5), color, 2)
+
+        elif self.icon == "minimize":
+            # Draw minimize/exit fullscreen icon (4 corners pointing inward)
+            line_width = 5
+            corner_size = size * 0.35
+            offset = size * 0.25
+
+            # Top-left corner (pointing inward)
+            pygame.draw.line(screen, color,
+                           (int(x - offset), int(y - offset)),
+                           (int(x - offset), int(y - offset + corner_size)),
+                           line_width)
+            pygame.draw.line(screen, color,
+                           (int(x - offset), int(y - offset)),
+                           (int(x - offset + corner_size), int(y - offset)),
+                           line_width)
+
+            # Top-right corner (pointing inward)
+            pygame.draw.line(screen, color,
+                           (int(x + offset), int(y - offset)),
+                           (int(x + offset), int(y - offset + corner_size)),
+                           line_width)
+            pygame.draw.line(screen, color,
+                           (int(x + offset), int(y - offset)),
+                           (int(x + offset - corner_size), int(y - offset)),
+                           line_width)
+
+            # Bottom-left corner (pointing inward)
+            pygame.draw.line(screen, color,
+                           (int(x - offset), int(y + offset)),
+                           (int(x - offset), int(y + offset - corner_size)),
+                           line_width)
+            pygame.draw.line(screen, color,
+                           (int(x - offset), int(y + offset)),
+                           (int(x - offset + corner_size), int(y + offset)),
+                           line_width)
+
+            # Bottom-right corner (pointing inward)
+            pygame.draw.line(screen, color,
+                           (int(x + offset), int(y + offset)),
+                           (int(x + offset), int(y + offset - corner_size)),
+                           line_width)
+            pygame.draw.line(screen, color,
+                           (int(x + offset), int(y + offset)),
+                           (int(x + offset - corner_size), int(y + offset)),
+                           line_width)
+
+            # Add glow effect if hovered
+            if self.hovered:
+                self._draw_glow(screen, int(x), int(y), int(size * 0.4), color, 2)
+
     def draw(self, screen: pygame.Surface) -> None:
         """
         Draw the button on the screen with responsive scaling, proper padding, and 3D shadow effect.

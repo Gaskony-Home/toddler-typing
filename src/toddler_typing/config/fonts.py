@@ -25,11 +25,12 @@ class FontManager:
         self.fredoka_regular = self.fonts_dir / "Fredoka-Regular.ttf"
         self.fredoka_bold = self.fonts_dir / "Fredoka-Bold.ttf"
 
-        # Check if fonts exist
-        self.has_custom_fonts = self.fredoka_regular.exists() and self.fredoka_bold.exists()
+        # Check if fonts exist and are compatible
+        self.has_custom_fonts = False  # Disabled due to pygame compatibility issues
+        # self.has_custom_fonts = self.fredoka_regular.exists() and self.fredoka_bold.exists()
 
         if not self.has_custom_fonts:
-            print(f"Warning: Custom fonts not found in {self.fonts_dir}")
+            print(f"Info: Using default pygame font (custom fonts disabled for compatibility)")
 
     def get_font(self, size: int, bold: bool = False) -> pygame.font.Font:
         """
