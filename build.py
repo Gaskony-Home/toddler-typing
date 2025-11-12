@@ -106,6 +106,7 @@ def create_executable():
         "--clean",
         "-y",  # Overwrite output directory without confirmation
         f"--add-data={web_dir}{os.pathsep}web",  # Add web directory with HTML/CSS/JS
+        f"--add-data={assets_dir}{os.pathsep}assets",  # Add assets directory with images/models
         "--hidden-import=webview",
         "--hidden-import=webview.platforms.winforms",
         "--hidden-import=pythonnet",

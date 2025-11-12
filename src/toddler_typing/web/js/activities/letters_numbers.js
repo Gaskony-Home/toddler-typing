@@ -113,6 +113,20 @@ class LettersNumbersActivity {
     async handleCorrectAnswer(result) {
         console.log('Correct answer!', result);
 
+        // Trigger character celebration
+        if (window.characterManager) {
+            if (result.level_up) {
+                // Major celebration for level up
+                window.characterManager.playAnimation('dance', false);
+            } else if (result.star_awarded) {
+                // Happy celebration for star
+                window.characterManager.playAnimation('happy', false);
+            } else {
+                // Clap for correct answer
+                window.characterManager.playAnimation('clap', false);
+            }
+        }
+
         // Show success flash
         this.successFlash = 30;  // frames
         this.showSuccessFlash();
