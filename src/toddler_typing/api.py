@@ -485,6 +485,98 @@ class ToddlerTypingAPI:
             'keyboard_lock_active': self.keyboard_locker is not None and self.keyboard_locker.running
         }
 
+    # === 3D Character Control ===
+
+    def play_character_animation(self, animation_name: str, loop: bool = None) -> Dict[str, Any]:
+        """
+        Trigger a character animation.
+
+        Args:
+            animation_name: Name of the animation to play (idle, wave, talk, happy, etc.)
+            loop: Whether to loop the animation (None = auto-determine)
+
+        Returns:
+            Dictionary with status
+        """
+        try:
+            logger.info(f"Playing character animation: {animation_name}")
+            return {
+                'success': True,
+                'animation': animation_name,
+                'loop': loop,
+                'message': f'Animation {animation_name} triggered'
+            }
+        except Exception as e:
+            logger.error(f"Failed to play character animation: {e}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
+
+    def set_character_emotion(self, emotion: str) -> Dict[str, Any]:
+        """
+        Set the character's emotional state.
+
+        Args:
+            emotion: Emotion name (happy, excited, curious, thinking, idle, etc.)
+
+        Returns:
+            Dictionary with status
+        """
+        try:
+            logger.info(f"Setting character emotion: {emotion}")
+            return {
+                'success': True,
+                'emotion': emotion,
+                'message': f'Character emotion set to {emotion}'
+            }
+        except Exception as e:
+            logger.error(f"Failed to set character emotion: {e}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
+
+    def character_start_talking(self) -> Dict[str, Any]:
+        """
+        Start the character's talking animation (called when TTS begins).
+
+        Returns:
+            Dictionary with status
+        """
+        try:
+            logger.debug("Character started talking")
+            return {
+                'success': True,
+                'message': 'Character talking animation started'
+            }
+        except Exception as e:
+            logger.error(f"Failed to start character talking: {e}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
+
+    def character_stop_talking(self) -> Dict[str, Any]:
+        """
+        Stop the character's talking animation (called when TTS ends).
+
+        Returns:
+            Dictionary with status
+        """
+        try:
+            logger.debug("Character stopped talking")
+            return {
+                'success': True,
+                'message': 'Character talking animation stopped'
+            }
+        except Exception as e:
+            logger.error(f"Failed to stop character talking: {e}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
+
     # === Cleanup ===
 
     def cleanup(self) -> None:

@@ -132,6 +132,11 @@ class ColorsShapesActivity {
             this.isWaiting = true;
             clickedOption.classList.add('correct');
 
+            // Character celebration
+            if (window.characterManager) {
+                window.characterManager.playAnimation('happy', false);
+            }
+
             // Play success sound/animation
             await PythonAPI.call('speak_text', 'Great job!');
 
@@ -144,6 +149,11 @@ class ColorsShapesActivity {
         } else {
             // Wrong
             clickedOption.classList.add('wrong');
+
+            // Character thinking/curious
+            if (window.characterManager) {
+                window.characterManager.playAnimation('thinking', false);
+            }
 
             // Play error sound
             await PythonAPI.call('speak_text', 'Try again!');

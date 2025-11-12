@@ -36,6 +36,7 @@ class DrawingActivity {
         this.setupColorPalette();
         this.setupBrushSizes();
         this.setupClearButton();
+        this.setupSaveButton();
         this.setupDrawingEvents();
     }
 
@@ -92,10 +93,45 @@ class DrawingActivity {
         }
     }
 
+    setupSaveButton() {
+        const saveBtn = document.getElementById('saveDrawing');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => this.saveDrawing());
+        }
+    }
+
     clearCanvas() {
         if (this.ctx) {
             this.ctx.fillStyle = 'white';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+    }
+
+    saveDrawing() {
+        if (!this.canvas) return;
+
+        // Convert canvas to data URL (PNG format)
+        const dataURL = this.canvas.toDataURL('image/png');
+
+        // Create a temporary link element
+        const link = document.createElement('a');
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        link.download = `toddler-drawing-${timestamp}.png`;
+        link.href = dataURL;
+
+        // Trigger download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        console.log('Drawing saved successfully');
+
+        // Give feedback (optional - speak or show message)
+        if (window.characterManager) {
+            window.characterManager.playAnimation('happy', false);
+        }
+        if (typeof PythonAPI !== 'undefined' && PythonAPI.call) {
+            PythonAPI.call('speak', 'Drawing saved!');
         }
     }
 

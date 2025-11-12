@@ -70,6 +70,34 @@ const PythonAPI = {
      */
     async loadSettings() {
         return await this.call('load_settings');
+    },
+
+    /**
+     * Play character animation
+     */
+    async playCharacterAnimation(animationName, loop = null) {
+        const result = await this.call('play_character_animation', animationName, loop);
+
+        // Trigger animation on frontend
+        if (window.characterManager && result?.success) {
+            window.characterManager.playAnimation(animationName, loop);
+        }
+
+        return result;
+    },
+
+    /**
+     * Set character emotion
+     */
+    async setCharacterEmotion(emotion) {
+        const result = await this.call('set_character_emotion', emotion);
+
+        // Trigger emotion on frontend
+        if (window.characterManager && result?.success) {
+            window.characterManager.setEmotion(emotion);
+        }
+
+        return result;
     }
 };
 
@@ -220,6 +248,64 @@ class FullscreenManager {
 }
 
 /**
+ * Mute Management
+ */
+class MuteManager {
+    constructor() {
+        this.muteBtn = document.getElementById('muteToggle');
+        this.muteIcon = this.muteBtn?.querySelector('i');
+        this.isMuted = false;
+
+        this.init();
+    }
+
+    init() {
+        // Load saved mute state
+        const savedMuted = localStorage.getItem('isMuted') === 'true';
+        this.setMuted(savedMuted, false);
+
+        // Bind toggle button
+        if (this.muteBtn) {
+            this.muteBtn.addEventListener('click', () => this.toggleMute());
+        }
+    }
+
+    setMuted(muted, save = true) {
+        this.isMuted = muted;
+        AppState.isMuted = muted;
+
+        // Update icon
+        if (this.muteIcon) {
+            if (muted) {
+                this.muteIcon.classList.remove('bi-volume-up-fill');
+                this.muteIcon.classList.add('bi-volume-mute-fill');
+            } else {
+                this.muteIcon.classList.remove('bi-volume-mute-fill');
+                this.muteIcon.classList.add('bi-volume-up-fill');
+            }
+        }
+
+        // Save preference
+        if (save) {
+            localStorage.setItem('isMuted', muted);
+        }
+
+        // Notify Python backend
+        if (typeof PythonAPI !== 'undefined' && PythonAPI.call) {
+            PythonAPI.call('set_muted', muted);
+        }
+    }
+
+    toggleMute() {
+        this.setMuted(!this.isMuted);
+    }
+
+    isMuted() {
+        return this.isMuted;
+    }
+}
+
+/**
  * Navigation Management
  */
 class NavigationManager {
@@ -318,6 +404,24 @@ class ActivityManager {
                     await this.currentActivityInstance.start();
                 }
                 break;
+            case 'dot2dot':
+                if (typeof Dot2DotActivity !== 'undefined') {
+                    this.currentActivityInstance = new Dot2DotActivity();
+                    await this.currentActivityInstance.start();
+                }
+                break;
+            case 'sounds':
+                if (typeof SoundsActivity !== 'undefined') {
+                    this.currentActivityInstance = new SoundsActivity();
+                    await this.currentActivityInstance.start();
+                }
+                break;
+            case 'coloring':
+                if (typeof ColoringActivity !== 'undefined') {
+                    this.currentActivityInstance = new ColoringActivity();
+                    await this.currentActivityInstance.start();
+                }
+                break;
             default:
                 console.log('No logic implemented for this activity yet');
         }
@@ -335,6 +439,12 @@ class ActivityManager {
                 break;
             case 'colors_shapes':
                 content = this.getColorsShapesContent();
+                break;
+            case 'dot2dot':
+                content = this.getDot2DotContent();
+                break;
+            case 'sounds':
+                content = this.getSoundsContent();
                 break;
             case 'coloring':
                 content = this.getColoringContent();
@@ -374,7 +484,7 @@ class ActivityManager {
     getDrawingContent() {
         return `
             <div class="activity-container drawing-activity">
-                <canvas id="drawingCanvas" width="1000" height="600"></canvas>
+                <canvas id="drawingCanvas" width="1400" height="800"></canvas>
 
                 <div class="drawing-controls">
                     <!-- Color Palette -->
@@ -408,6 +518,11 @@ class ActivityManager {
                     <button class="btn btn-danger btn-clear-canvas" id="clearCanvas">
                         <i class="bi bi-trash"></i> Clear
                     </button>
+
+                    <!-- Save Button -->
+                    <button class="btn btn-success btn-clear-canvas" id="saveDrawing">
+                        <i class="bi bi-download"></i> Save
+                    </button>
                 </div>
             </div>
         `;
@@ -429,13 +544,98 @@ class ActivityManager {
         `;
     }
 
+    getDot2DotContent() {
+        return `
+            <div class="activity-container colors-shapes-activity">
+                <!-- Title and Counter -->
+                <h2 class="display-5 fw-bold mb-3" id="dot2dotTitle">Dot to Dot</h2>
+                <div class="progress-display-top">
+                    <span id="dot2dotCounter">1 / 6</span>
+                </div>
+
+                <!-- Image Container -->
+                <div id="dot2dotImageContainer" class="coloring-image-container">
+                    <!-- Image will be loaded here -->
+                </div>
+
+                <!-- Navigation Controls -->
+                <div class="drawing-controls" style="justify-content: center; gap: 1rem;">
+                    <button class="btn btn-primary btn-lg" id="prevDot2Dot">
+                        <i class="bi bi-arrow-left"></i> Previous
+                    </button>
+                    <button class="btn btn-primary btn-lg" id="nextDot2Dot">
+                        <i class="bi bi-arrow-right"></i> Next
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    getSoundsContent() {
+        return `
+            <div class="activity-container colors-shapes-activity">
+                <!-- Title and Counter -->
+                <h2 class="display-5 fw-bold mb-3">Letter Sounds</h2>
+                <div class="progress-display-top">
+                    <span id="soundCounter">1 / 8</span>
+                </div>
+
+                <!-- Instruction Text -->
+                <p id="soundDescription" class="instruction-text">
+                    Click the speaker to hear the sound!
+                </p>
+
+                <!-- Main Sound Display -->
+                <div id="soundDisplay" class="letter-number-display is-letter" style="font-size: clamp(5rem, 12vw, 10rem);">
+                    SH
+                </div>
+
+                <!-- Example Words -->
+                <div id="soundExamples" class="shape-options-grid" style="grid-template-columns: repeat(3, 1fr); max-width: 600px; margin: 2rem auto;">
+                    <!-- Example buttons will be generated here -->
+                </div>
+
+                <!-- Navigation Controls -->
+                <div class="drawing-controls" style="justify-content: center; gap: 1rem;">
+                    <button class="btn btn-secondary btn-lg" id="prevSound">
+                        <i class="bi bi-arrow-left"></i> Previous
+                    </button>
+                    <button class="btn btn-success btn-lg" id="hearSound">
+                        <i class="bi bi-volume-up-fill"></i> Hear Sound
+                    </button>
+                    <button class="btn btn-secondary btn-lg" id="nextSound">
+                        <i class="bi bi-arrow-right"></i> Next
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
     getColoringContent() {
         return `
-            <div class="activity-container">
-                <h2 class="display-5 fw-bold mb-4">Coloring</h2>
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i>
-                    Activity coming soon! Color beautiful pictures.
+            <div class="activity-container colors-shapes-activity">
+                <!-- Title and Counter -->
+                <h2 class="display-5 fw-bold mb-3" id="coloringTitle">Coloring</h2>
+                <div class="progress-display-top">
+                    <span id="coloringCounter">1 / 6</span>
+                </div>
+
+                <!-- Image Container -->
+                <div id="coloringImageContainer" class="coloring-image-container">
+                    <!-- Image will be loaded here -->
+                </div>
+
+                <!-- Navigation Controls -->
+                <div class="drawing-controls" style="justify-content: center; gap: 1rem;">
+                    <button class="btn btn-primary btn-lg" id="prevColoring">
+                        <i class="bi bi-arrow-left"></i> Previous
+                    </button>
+                    <button class="btn btn-success btn-lg" id="printColoring">
+                        <i class="bi bi-printer"></i> Print
+                    </button>
+                    <button class="btn btn-primary btn-lg" id="nextColoring">
+                        <i class="bi bi-arrow-right"></i> Next
+                    </button>
                 </div>
             </div>
         `;
@@ -445,8 +645,10 @@ class ActivityManager {
 // Global instances
 let themeManager;
 let fullscreenManager;
+let muteManager;
 let navigationManager;
 let activityManager;
+let characterManager;
 
 /**
  * Global functions (called from HTML onclick)
@@ -472,8 +674,58 @@ async function initApp() {
     // Initialize managers
     themeManager = new ThemeManager();
     fullscreenManager = new FullscreenManager();
+    muteManager = new MuteManager();
     navigationManager = new NavigationManager();
     activityManager = new ActivityManager(navigationManager);
+
+    // Initialize character (3D if Three.js available, fallback to 2D)
+    const characterContainer = document.getElementById('character-container');
+
+    // Check if Three.js is available
+    console.log('=== CHARACTER INITIALIZATION DEBUG ===');
+    console.log('Three.js available:', typeof THREE !== 'undefined');
+    console.log('CharacterManager defined:', typeof CharacterManager !== 'undefined');
+
+    if (characterContainer && typeof THREE !== 'undefined' && typeof CharacterManager !== 'undefined') {
+        console.log('Attempting to load 3D character...');
+        characterManager = new CharacterManager(characterContainer);
+
+        // Try to initialize 3D character
+        try {
+            await characterManager.init();
+            console.log('✓ 3D Character loaded successfully!');
+
+            // Wave hello to the user after a brief delay
+            setTimeout(() => {
+                if (characterManager) characterManager.playAnimation('wave', false);
+            }, 1500);
+
+            // Set up voice-to-animation bridge
+            if (typeof VoiceToAnimationBridge !== 'undefined') {
+                window.voiceToAnimationBridge = new VoiceToAnimationBridge(characterManager);
+                console.log('✓ Voice-to-animation bridge initialized');
+            }
+        } catch (error) {
+            console.error('✗ 3D Character initialization failed:', error);
+            console.log('Falling back to 2D character...');
+            // Try 2D fallback
+            if (typeof CharacterManager2D !== 'undefined') {
+                characterManager = new CharacterManager2D(characterContainer);
+                await characterManager.init();
+                console.log('✓ 2D Character fallback loaded');
+            }
+        }
+    } else {
+        console.warn('Three.js not available, using 2D character fallback');
+        // Load 2D character as fallback
+        if (characterContainer && typeof CharacterManager2D !== 'undefined') {
+            characterManager = new CharacterManager2D(characterContainer);
+            await characterManager.init();
+            console.log('✓ 2D Character loaded (fallback)');
+        } else {
+            console.error('No character manager available!');
+        }
+    }
 
     // Load version
     const versionLabel = document.getElementById('versionLabel');
