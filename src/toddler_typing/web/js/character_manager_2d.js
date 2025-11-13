@@ -57,7 +57,7 @@ class CharacterManager2D {
 
             // Create character image
             const img = document.createElement('img');
-            img.src = 'assets/dino_character.png';
+            img.src = 'assets/dino_character.svg';
             img.alt = 'Dinosaur Character';
             img.className = 'character-2d-image';
             img.id = 'character-2d-image';

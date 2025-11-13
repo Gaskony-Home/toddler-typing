@@ -764,7 +764,7 @@ footer {
    ============================================ */
 
 .drawing-activity {
-    padding: 1rem;
+    padding: 0.5rem 1rem;
 }
 
 #drawingCanvas {
@@ -784,8 +784,8 @@ footer {
     gap: 1rem;
     justify-content: center;
     align-items: center;
-    margin-top: 1.5rem;
-    padding: 1rem;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
     background: var(--bg-secondary);
     border-radius: var(--border-radius-lg);
     box-shadow: 0 4px 12px var(--shadow-color);
@@ -845,6 +845,11 @@ footer {
     background: rgba(251, 191, 36, 0.1);
 }
 
+.brush-size-tiny {
+    width: 35px;
+    height: 35px;
+}
+
 .brush-size-small {
     width: 40px;
     height: 40px;
@@ -860,20 +865,41 @@ footer {
     height: 60px;
 }
 
+.brush-size-xlarge {
+    width: 70px;
+    height: 70px;
+}
+
 .brush-preview {
     background: var(--text-primary);
     border-radius: 50%;
 }
 
+.brush-preview-tiny { width: 4px; height: 4px; }
 .brush-preview-small { width: 8px; height: 8px; }
 .brush-preview-medium { width: 16px; height: 16px; }
 .brush-preview-large { width: 24px; height: 24px; }
+.brush-preview-xlarge { width: 32px; height: 32px; }
 
 .btn-clear-canvas {
-    padding: 0.75rem 2rem;
+    padding: 0.75rem 1.5rem;
     font-size: 1.25rem;
     font-weight: 700;
     border-radius: var(--border-radius-lg);
+    min-width: 140px;
+}
+
+.drawing-action-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+}
+
+/* Ensure consistent button sizes across all activities */
+.btn-lg {
+    min-width: 140px;
 }
 
 /* ============================================
@@ -1033,9 +1059,53 @@ footer {
     right: 20px;
     width: clamp(200px, 25vw, 350px);
     height: clamp(200px, 25vh, 350px);
-    z-index: 5;
-    pointer-events: none;
+    z-index: 50;
+    pointer-events: auto;
+    cursor: pointer;
     animation: characterSlideIn 1s ease-out 0.5s backwards;
+    transition: bottom 0.3s ease, right 0.3s ease, transform 0.2s ease;
+}
+
+/* Interactive states */
+#character-container:hover {
+    transform: scale(1.05);
+}
+
+#character-container:active {
+    transform: scale(0.98);
+}
+
+/* Adjust character position for drawing activities to avoid overlap with controls */
+.drawing-activity ~ #character-container,
+.drawing-activity #character-container {
+    bottom: 20px;
+    right: 20px;
+    left: auto;
+    top: auto;
+}
+
+/* Move character to top-left for drawing, coloring, and dot2dot pages */
+body:has(.drawing-activity) #character-container {
+    top: 80px;
+    left: 20px;
+    bottom: auto;
+    right: auto;
+}
+
+/* Keep character on right for colors-shapes but move up to avoid overlap */
+body:has(.colors-shapes-activity) #character-container {
+    bottom: auto;
+    top: 80px;
+    right: 20px;
+    left: auto;
+}
+
+/* Keep character in bottom-right for letters-numbers activity */
+body:has(.letters-numbers-activity) #character-container {
+    bottom: 20px;
+    right: 20px;
+    top: auto;
+    left: auto;
 }
 
 #character-container canvas {
@@ -1085,8 +1155,14 @@ footer {
     #character-container {
         width: 150px;
         height: 150px;
-        right: 15px;
-        bottom: 15px;
+    }
+
+    /* Keep adjusted positioning on small screens too */
+    body:has(.drawing-activity) #character-container {
+        width: 120px;
+        height: 120px;
+        top: 70px;
+        left: 10px;
     }
 }
 
@@ -1094,8 +1170,13 @@ footer {
     #character-container {
         width: 120px;
         height: 120px;
-        right: 10px;
-        bottom: 10px;
+    }
+
+    body:has(.drawing-activity) #character-container {
+        width: 100px;
+        height: 100px;
+        top: 60px;
+        left: 5px;
     }
 }
 
@@ -1332,9 +1413,22 @@ footer {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 2rem auto;
-    max-width: 800px;
-    min-height: 400px;
+    margin: 1rem auto;
+    max-width: 100%;
+    width: 100%;
+}
+
+#coloringCanvas,
+#dot2dotCanvas {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    max-height: calc(100vh - 320px);
+    background: white;
+    border-radius: var(--border-radius-lg);
+    cursor: crosshair;
+    touch-action: none;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
 .coloring-image,
