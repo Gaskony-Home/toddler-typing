@@ -8,8 +8,62 @@ const AppState = {
     currentActivity: null,
     theme: 'light',
     isFullscreen: false,
-    version: '1.0.0'
+    version: '1.1.4'
 };
+
+// Dinosaur interaction responses
+const DinosaurInteractions = [
+    { phrase: "Hi there! Ready to play?", animation: "wave" },
+    { phrase: "You're doing great!", animation: "happy" },
+    { phrase: "Let's have fun!", animation: "clap" },
+    { phrase: "I love learning with you!", animation: "dance" },
+    { phrase: "That's so cool!", animation: "happy" },
+    { phrase: "Let's try something new!", animation: "point" },
+    { phrase: "You're so smart!", animation: "clap" },
+    { phrase: "Yay! Keep going!", animation: "dance" },
+    { phrase: "Hmm, what should we do next?", animation: "thinking" },
+    { phrase: "Hello friend!", animation: "wave" }
+];
+
+let lastInteractionIndex = -1;
+
+// Handle dinosaur click interactions
+function handleDinosaurClick(event) {
+    console.log('🦕 Dinosaur clicked!', event);
+
+    if (!window.characterManager) {
+        console.error('Character manager not available!');
+        return;
+    }
+
+    // Prevent clicking too rapidly
+    if (window.characterManager.isSpeaking) {
+        console.log('Character is already speaking, ignoring click');
+        return;
+    }
+
+    // Pick a random interaction that's different from the last one
+    let randomIndex;
+    do {
+        randomIndex = Math.floor(Math.random() * DinosaurInteractions.length);
+    } while (randomIndex === lastInteractionIndex && DinosaurInteractions.length > 1);
+
+    lastInteractionIndex = randomIndex;
+    const interaction = DinosaurInteractions[randomIndex];
+
+    console.log('Playing interaction:', interaction);
+
+    // Play animation
+    window.characterManager.playAnimation(interaction.animation);
+
+    // Speak the phrase if API is available
+    if (typeof pywebview !== 'undefined' && pywebview.api && pywebview.api.speak) {
+        console.log('Speaking via API:', interaction.phrase);
+        pywebview.api.speak(interaction.phrase, false);
+    } else {
+        console.log('🦕 Dino says:', interaction.phrase);
+    }
+}
 
 // Python API bridge (will be available via pywebview.api)
 const PythonAPI = {
@@ -484,6 +538,9 @@ class ActivityManager {
     getDrawingContent() {
         return `
             <div class="activity-container drawing-activity">
+                <!-- Title -->
+                <h2 class="display-5 fw-bold mb-2">Free Drawing</h2>
+
                 <canvas id="drawingCanvas" width="1400" height="800"></canvas>
 
                 <div class="drawing-controls">
@@ -499,30 +556,38 @@ class ActivityManager {
                         <div class="color-btn" data-color="#000000" style="background: #000000;" title="Black"></div>
                         <div class="color-btn" data-color="#FFFFFF" style="background: #FFFFFF; border-color: #dee2e6;" title="White"></div>
                         <div class="color-btn" data-color="#8B4513" style="background: #8B4513;" title="Brown"></div>
+                        <div class="color-btn" data-color="#FFC0CB" style="background: #FFC0CB;" title="Pink"></div>
+                        <div class="color-btn" data-color="#A52A2A" style="background: #A52A2A;" title="Dark Brown"></div>
                     </div>
 
                     <!-- Brush Sizes -->
                     <div class="brush-sizes" id="brushSizes">
-                        <div class="brush-size-btn brush-size-small" data-size="5" title="Small">
+                        <div class="brush-size-btn brush-size-tiny" data-size="3" title="Tiny">
+                            <div class="brush-preview brush-preview-tiny"></div>
+                        </div>
+                        <div class="brush-size-btn brush-size-small" data-size="8" title="Small">
                             <div class="brush-preview brush-preview-small"></div>
                         </div>
                         <div class="brush-size-btn brush-size-medium active" data-size="15" title="Medium">
                             <div class="brush-preview brush-preview-medium"></div>
                         </div>
-                        <div class="brush-size-btn brush-size-large" data-size="30" title="Large">
+                        <div class="brush-size-btn brush-size-large" data-size="25" title="Large">
                             <div class="brush-preview brush-preview-large"></div>
+                        </div>
+                        <div class="brush-size-btn brush-size-xlarge" data-size="40" title="Extra Large">
+                            <div class="brush-preview brush-preview-xlarge"></div>
                         </div>
                     </div>
 
-                    <!-- Clear Button -->
-                    <button class="btn btn-danger btn-clear-canvas" id="clearCanvas">
-                        <i class="bi bi-trash"></i> Clear
-                    </button>
-
-                    <!-- Save Button -->
-                    <button class="btn btn-success btn-clear-canvas" id="saveDrawing">
-                        <i class="bi bi-download"></i> Save
-                    </button>
+                    <!-- Action Buttons -->
+                    <div class="drawing-action-buttons">
+                        <button class="btn btn-danger btn-clear-canvas" id="clearCanvas">
+                            <i class="bi bi-trash"></i> Clear
+                        </button>
+                        <button class="btn btn-success btn-clear-canvas" id="saveDrawing">
+                            <i class="bi bi-download"></i> Save
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -546,26 +611,69 @@ class ActivityManager {
 
     getDot2DotContent() {
         return `
-            <div class="activity-container colors-shapes-activity">
+            <div class="activity-container drawing-activity">
                 <!-- Title and Counter -->
-                <h2 class="display-5 fw-bold mb-3" id="dot2dotTitle">Dot to Dot</h2>
-                <div class="progress-display-top">
+                <h2 class="display-5 fw-bold mb-2" id="dot2dotTitle">Dot to Dot</h2>
+                <div class="progress-display-top mb-2">
                     <span id="dot2dotCounter">1 / 6</span>
                 </div>
 
-                <!-- Image Container -->
+                <!-- Canvas Container -->
                 <div id="dot2dotImageContainer" class="coloring-image-container">
-                    <!-- Image will be loaded here -->
+                    <canvas id="dot2dotCanvas" width="1000" height="700"></canvas>
                 </div>
 
-                <!-- Navigation Controls -->
-                <div class="drawing-controls" style="justify-content: center; gap: 1rem;">
-                    <button class="btn btn-primary btn-lg" id="prevDot2Dot">
-                        <i class="bi bi-arrow-left"></i> Previous
-                    </button>
-                    <button class="btn btn-primary btn-lg" id="nextDot2Dot">
-                        <i class="bi bi-arrow-right"></i> Next
-                    </button>
+                <div class="drawing-controls">
+                    <!-- Color Palette -->
+                    <div class="color-palette" id="colorPalette">
+                        <div class="color-btn active" data-color="#FF0000" style="background: #FF0000;" title="Red"></div>
+                        <div class="color-btn" data-color="#FF7F00" style="background: #FF7F00;" title="Orange"></div>
+                        <div class="color-btn" data-color="#FFFF00" style="background: #FFFF00;" title="Yellow"></div>
+                        <div class="color-btn" data-color="#00FF00" style="background: #00FF00;" title="Green"></div>
+                        <div class="color-btn" data-color="#0000FF" style="background: #0000FF;" title="Blue"></div>
+                        <div class="color-btn" data-color="#4B0082" style="background: #4B0082;" title="Indigo"></div>
+                        <div class="color-btn" data-color="#9400D3" style="background: #9400D3;" title="Violet"></div>
+                        <div class="color-btn" data-color="#000000" style="background: #000000;" title="Black"></div>
+                        <div class="color-btn" data-color="#FFFFFF" style="background: #FFFFFF; border-color: #dee2e6;" title="White"></div>
+                        <div class="color-btn" data-color="#8B4513" style="background: #8B4513;" title="Brown"></div>
+                        <div class="color-btn" data-color="#FFC0CB" style="background: #FFC0CB;" title="Pink"></div>
+                        <div class="color-btn" data-color="#A52A2A" style="background: #A52A2A;" title="Dark Brown"></div>
+                    </div>
+
+                    <!-- Brush Sizes -->
+                    <div class="brush-sizes" id="brushSizes">
+                        <div class="brush-size-btn brush-size-tiny" data-size="3" title="Tiny">
+                            <div class="brush-preview brush-preview-tiny"></div>
+                        </div>
+                        <div class="brush-size-btn brush-size-small" data-size="8" title="Small">
+                            <div class="brush-preview brush-preview-small"></div>
+                        </div>
+                        <div class="brush-size-btn brush-size-medium active" data-size="15" title="Medium">
+                            <div class="brush-preview brush-preview-medium"></div>
+                        </div>
+                        <div class="brush-size-btn brush-size-large" data-size="25" title="Large">
+                            <div class="brush-preview brush-preview-large"></div>
+                        </div>
+                        <div class="brush-size-btn brush-size-xlarge" data-size="40" title="Extra Large">
+                            <div class="brush-preview brush-preview-xlarge"></div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation and Action Buttons -->
+                    <div class="drawing-action-buttons">
+                        <button class="btn btn-primary btn-clear-canvas" id="prevDot2Dot">
+                            <i class="bi bi-arrow-left"></i> Previous
+                        </button>
+                        <button class="btn btn-danger btn-clear-canvas" id="clearDot2Dot">
+                            <i class="bi bi-trash"></i> Clear
+                        </button>
+                        <button class="btn btn-success btn-clear-canvas" id="saveDot2Dot">
+                            <i class="bi bi-download"></i> Save
+                        </button>
+                        <button class="btn btn-primary btn-clear-canvas" id="nextDot2Dot">
+                            <i class="bi bi-arrow-right"></i> Next
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -613,29 +721,69 @@ class ActivityManager {
 
     getColoringContent() {
         return `
-            <div class="activity-container colors-shapes-activity">
+            <div class="activity-container drawing-activity">
                 <!-- Title and Counter -->
-                <h2 class="display-5 fw-bold mb-3" id="coloringTitle">Coloring</h2>
-                <div class="progress-display-top">
+                <h2 class="display-5 fw-bold mb-2" id="coloringTitle">Coloring</h2>
+                <div class="progress-display-top mb-2">
                     <span id="coloringCounter">1 / 6</span>
                 </div>
 
-                <!-- Image Container -->
+                <!-- Canvas Container -->
                 <div id="coloringImageContainer" class="coloring-image-container">
-                    <!-- Image will be loaded here -->
+                    <canvas id="coloringCanvas" width="1000" height="700"></canvas>
                 </div>
 
-                <!-- Navigation Controls -->
-                <div class="drawing-controls" style="justify-content: center; gap: 1rem;">
-                    <button class="btn btn-primary btn-lg" id="prevColoring">
-                        <i class="bi bi-arrow-left"></i> Previous
-                    </button>
-                    <button class="btn btn-success btn-lg" id="printColoring">
-                        <i class="bi bi-printer"></i> Print
-                    </button>
-                    <button class="btn btn-primary btn-lg" id="nextColoring">
-                        <i class="bi bi-arrow-right"></i> Next
-                    </button>
+                <div class="drawing-controls">
+                    <!-- Color Palette -->
+                    <div class="color-palette" id="colorPalette">
+                        <div class="color-btn active" data-color="#FF0000" style="background: #FF0000;" title="Red"></div>
+                        <div class="color-btn" data-color="#FF7F00" style="background: #FF7F00;" title="Orange"></div>
+                        <div class="color-btn" data-color="#FFFF00" style="background: #FFFF00;" title="Yellow"></div>
+                        <div class="color-btn" data-color="#00FF00" style="background: #00FF00;" title="Green"></div>
+                        <div class="color-btn" data-color="#0000FF" style="background: #0000FF;" title="Blue"></div>
+                        <div class="color-btn" data-color="#4B0082" style="background: #4B0082;" title="Indigo"></div>
+                        <div class="color-btn" data-color="#9400D3" style="background: #9400D3;" title="Violet"></div>
+                        <div class="color-btn" data-color="#000000" style="background: #000000;" title="Black"></div>
+                        <div class="color-btn" data-color="#FFFFFF" style="background: #FFFFFF; border-color: #dee2e6;" title="White"></div>
+                        <div class="color-btn" data-color="#8B4513" style="background: #8B4513;" title="Brown"></div>
+                        <div class="color-btn" data-color="#FFC0CB" style="background: #FFC0CB;" title="Pink"></div>
+                        <div class="color-btn" data-color="#A52A2A" style="background: #A52A2A;" title="Dark Brown"></div>
+                    </div>
+
+                    <!-- Brush Sizes -->
+                    <div class="brush-sizes" id="brushSizes">
+                        <div class="brush-size-btn brush-size-tiny" data-size="3" title="Tiny">
+                            <div class="brush-preview brush-preview-tiny"></div>
+                        </div>
+                        <div class="brush-size-btn brush-size-small" data-size="8" title="Small">
+                            <div class="brush-preview brush-preview-small"></div>
+                        </div>
+                        <div class="brush-size-btn brush-size-medium active" data-size="15" title="Medium">
+                            <div class="brush-preview brush-preview-medium"></div>
+                        </div>
+                        <div class="brush-size-btn brush-size-large" data-size="25" title="Large">
+                            <div class="brush-preview brush-preview-large"></div>
+                        </div>
+                        <div class="brush-size-btn brush-size-xlarge" data-size="40" title="Extra Large">
+                            <div class="brush-preview brush-preview-xlarge"></div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation and Action Buttons -->
+                    <div class="drawing-action-buttons">
+                        <button class="btn btn-primary btn-clear-canvas" id="prevColoring">
+                            <i class="bi bi-arrow-left"></i> Previous
+                        </button>
+                        <button class="btn btn-danger btn-clear-canvas" id="clearColoring">
+                            <i class="bi bi-trash"></i> Clear
+                        </button>
+                        <button class="btn btn-success btn-clear-canvas" id="saveColoring">
+                            <i class="bi bi-download"></i> Save
+                        </button>
+                        <button class="btn btn-primary btn-clear-canvas" id="nextColoring">
+                            <i class="bi bi-arrow-right"></i> Next
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -725,6 +873,17 @@ async function initApp() {
         } else {
             console.error('No character manager available!');
         }
+    }
+
+    // Make character manager globally accessible
+    if (characterManager) {
+        window.characterManager = characterManager;
+    }
+
+    // Set up dinosaur click interactions
+    if (characterContainer && characterManager) {
+        characterContainer.addEventListener('click', handleDinosaurClick);
+        console.log('✓ Dinosaur click interactions enabled');
     }
 
     // Load version
