@@ -1,99 +1,64 @@
 # Toddler Typing
 
-A child-friendly program designed for safe computer interaction with educational content, keyboard locking, and engaging activities for young children (ages 2-5).
+A child-friendly educational app for toddlers (ages 2-5) with engaging activities, keyboard protection, and cross-platform support.
 
 ## Features
 
-- **Keyboard Lock**: Prevents unwanted key combinations (Windows key, Alt+Tab, Alt+F4, etc.) while allowing safe exit via Ctrl+Shift+Esc
-- **Interactive Learning Activities**:
-  - Letters learning with keyboard input
-  - Numbers recognition
-  - Colors and shapes exploration
-  - Simple drawing canvas
-- **Child-Friendly UI**: Large, colorful buttons and engaging visual design
-- **Portable**: Can be packaged as a standalone executable for Windows
-- **Parental Controls**: Customizable settings via configuration file
+- **Educational Activities**:
+  - Letters & Numbers learning with keyboard/touch input
+  - Colors & Shapes exploration
+  - Drawing canvas with multiple colors and brush sizes
+  - Coloring pages
+  - Dot-to-dot games
+  - Animal sounds
+
+- **Interactive Dinosaur Character**: Animated companion that reacts to activities and speaks encouragement
+
+- **Safety Features**:
+  - Keyboard lock (Windows) - blocks system keys like Alt+Tab, Windows key
+  - Fullscreen mode prevents accidental window switching
+  - Secure exit: Ctrl+Shift+Esc (parent-only combination)
+  - Completely offline - no internet, no data collection
+
+- **Cross-Platform**: Windows desktop app + Android tablet app
+
+## Platforms
+
+| Platform | Status | Notes |
+|----------|--------|-------|
+| Windows | Ready | Full keyboard lock support |
+| Android | Ready | Optimized for 10" tablets |
+| macOS/Linux | Partial | No keyboard lock |
 
 ## Quick Start
 
-### Option 1: Portable Version (Recommended for End Users)
+### Windows (Desktop)
 
-**Want to run without installing Python? Get the portable version:**
+**Option 1: Run from Source**
+```bash
+pip install -r requirements.txt
+python run.py
+```
 
-1. **Build the portable version** (one-time setup):
-   ```bash
-   pip install -r requirements-build.txt
-   python make-portable.py
-   ```
-
-2. **Find your portable app** in `releases/` folder - it's a ZIP file
-
-3. **Extract and run** - that's it! No Python needed on target computers.
-
-See **[BUILD_PORTABLE.md](BUILD_PORTABLE.md)** for detailed instructions.
-
-### Option 2: Run from Source (For Development)
-
-1. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Run the application**:
-   ```bash
-   python3 run.py
-   ```
-
-3. **Exit the application**:
-   - Development mode: Press ESC
-   - Production mode: Press Ctrl+Shift+Esc
-
-For detailed usage instructions, see [USAGE.md](USAGE.md)
-
-### Prerequisites
-
-- Python 3.8 or higher (only for building/development)
-- Windows OS (for keyboard locking functionality - optional)
-- Linux/Mac supported without keyboard lock feature
-
-### Quick Build Method
-
-**Automated build and packaging:**
-
+**Option 2: Build Portable Executable**
 ```bash
 pip install -r requirements-build.txt
 python make-portable.py
 ```
+Creates a standalone ZIP in `releases/` - no Python needed on target machine.
 
-This creates a complete, ready-to-distribute ZIP file in `releases/` folder.
+### Android (Tablet)
 
-**Manual build method:**
+1. Open the `android/` folder in Android Studio
+2. Connect your tablet via USB (enable Developer Mode)
+3. Click Run
 
-```bash
-pip install -r requirements-build.txt
-python build.py
-```
-
-This creates the executable in `dist/toddler-typing/` folder.
-
-### What You Get
-
-A fully portable folder containing:
-- ✅ `toddler-typing.exe` - Standalone executable (no Python needed!)
-- ✅ `START_TODDLER_TYPING.bat` - Easy double-click launcher
-- ✅ All configuration files (dev, production, example)
-- ✅ Complete documentation
-- ✅ All required libraries bundled
-
-**Share the ZIP - recipients just extract and run!**
-
-See **[BUILD_PORTABLE.md](BUILD_PORTABLE.md)** for complete build instructions
+See [android/README.md](android/README.md) for detailed instructions.
 
 ## Configuration
 
-The application can be customized via a `config.json` file in the same directory as the executable. See `docs/configuration.md` for details.
+Edit `config.json` to customize:
 
-Example configuration:
 ```json
 {
   "fullscreen": true,
@@ -101,118 +66,85 @@ Example configuration:
   "exit_combination": ["ctrl", "shift", "esc"],
   "enable_letters": true,
   "enable_numbers": true,
-  "enable_colors": true,
-  "enable_shapes": true
+  "default_brush_size": 20
 }
 ```
 
-## Safety Features
+**Modes:**
+- `config.dev.json` - Development (windowed, ESC to exit)
+- `config.production.json` - Production (fullscreen, keyboard lock)
 
-- **Secure Exit**: Only Ctrl+Shift+Esc exits the program (difficult for toddlers to press accidentally)
-- **Keyboard Protection**: Blocks Windows key, Alt+Tab, and other system key combinations (Windows only)
-- **Fullscreen Mode**: Prevents accidental window switching
-- **No Network Access**: Completely offline application
-- **No Data Collection**: Zero telemetry or personal information collected
-- **Open Source**: All code is auditable and transparent
-
-## Security
-
-This project follows security best practices for child-focused applications. For important security information, please review:
-
-- **[SECURITY.md](SECURITY.md)** - Security policy, vulnerability reporting, and security considerations
-
-### Important Security Notes
-
-- **Development Status**: This application is currently in development. A security audit identified several issues that are being addressed before the 1.0 release.
-- **Keyboard Lock Limitations**: Ctrl+Alt+Delete cannot be blocked on Windows (this is a security feature by design). Parental supervision is still recommended.
-- **Use Production Config**: For actual toddler use, ensure you're using the production configuration with keyboard lock enabled.
-- **Report Vulnerabilities**: If you discover a security issue, please see [SECURITY.md](SECURITY.md) for responsible disclosure procedures.
-
-For detailed security information, see [SECURITY.md](SECURITY.md).
+See [docs/configuration.md](docs/configuration.md) for all options.
 
 ## Project Structure
 
 ```
 toddler-typing/
-├── src/
-│   └── toddler_typing/
-│       ├── __init__.py
-│       ├── main.py                 # Main entry point
-│       ├── config/                 # Configuration management
-│       ├── keyboard/               # Keyboard locking functionality
-│       ├── ui/                     # User interface components
-│       ├── educational/            # Learning activities
-│       ├── drawing/                # Drawing canvas
-│       └── assets/                 # Images, sounds, fonts
-├── tests/                          # Unit tests
-├── docs/                           # Documentation
-├── pyproject.toml                  # Project configuration
-├── requirements.txt                # Dependencies
-└── build.py                        # Build script for executable
+├── src/toddler_typing/     # Python source code
+│   ├── ui/                 # User interface components
+│   ├── educational/        # Learning activities
+│   ├── drawing/            # Drawing canvas
+│   ├── keyboard/           # Keyboard locking (Windows)
+│   └── assets/             # Images, sounds, fonts
+├── android/                # Android app (Kotlin + WebView)
+│   ├── app/src/main/
+│   │   ├── java/           # Kotlin source
+│   │   └── assets/web/     # Web frontend
+│   └── README.md           # Android build instructions
+├── docs/                   # Documentation
+│   ├── USAGE.md            # User guide
+│   ├── DEVELOPMENT.md      # Developer guide
+│   ├── BUILD_PORTABLE.md   # Build instructions
+│   └── configuration.md    # Config options
+├── tests/                  # Unit tests
+└── releases/               # Built executables
 ```
+
+## Documentation
+
+- [Usage Guide](docs/USAGE.md) - How to use the app
+- [Development Guide](docs/DEVELOPMENT.md) - For contributors
+- [Build Guide](docs/BUILD_PORTABLE.md) - Creating portable executables
+- [Configuration](docs/configuration.md) - All config options
+- [Security Policy](SECURITY.md) - Security info and reporting
+- [Roadmap](ROADMAP.md) - Future plans
 
 ## Development
 
-### Setting Up Development Environment
-
-1. Install development dependencies:
 ```bash
+# Install dev dependencies
 pip install -r requirements-dev.txt
-```
 
-2. Run tests:
-```bash
+# Run tests
 pytest
-```
 
-3. Format code:
-```bash
+# Format code
 black src/ tests/
-```
 
-4. Type checking:
-```bash
+# Type checking
 mypy src/
 ```
 
-### Adding New Activities
+## Safety & Privacy
 
-1. Create a new module in `src/toddler_typing/educational/`
-2. Implement the activity class with `handle_event()`, `update()`, and `draw()` methods
-3. Add the activity to the main menu in `ui/main_menu.py`
-
-## AI Agent Integration
-
-This project is structured to be AI-agent-friendly:
-
-- Clear module organization with single responsibilities
-- Type hints throughout the codebase
-- Comprehensive docstrings
-- Modular architecture for easy extension
-- Well-defined interfaces between components
-
-AI agents can easily:
-- Navigate the codebase structure
-- Understand component relationships
-- Add new features or activities
-- Modify existing functionality
-- Generate tests
+- **No Internet**: Completely offline
+- **No Data Collection**: Zero telemetry
+- **No Ads**: No advertisements
+- **Open Source**: All code is auditable
+- **COPPA/GDPR**: No personal data processed
 
 ## License
 
-MIT License - See LICENSE file for details
+MIT License - See [LICENSE](LICENSE)
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit pull requests or open issues.
+Contributions welcome! Please see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for guidelines.
 
 ## Acknowledgments
 
 Built with:
-- [Pygame](https://www.pygame.org/) - Game development library
+- [Pygame](https://www.pygame.org/) - Python game library
 - [Pynput](https://pynput.readthedocs.io/) - Keyboard control
 - [PyInstaller](https://www.pyinstaller.org/) - Executable packaging
-
-## Support
-
-For issues or questions, please open an issue on the GitHub repository.
+- Android WebView + Kotlin
