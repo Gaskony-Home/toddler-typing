@@ -153,3 +153,18 @@ Thumbs.db
 # Project-specific
 config.json
 *.db
+
+# Android
+android/.gradle/
+android/app/build/
+android/build/
+android/gradle-temp/
+android/gradle.zip
+android/local.properties
+android/.idea/
+*.apk
+*.aab
+*.keystore
+
+# Claude Code
+.claude/
