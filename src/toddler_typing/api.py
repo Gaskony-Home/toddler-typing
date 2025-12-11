@@ -7,9 +7,20 @@ keyboard locking, and text-to-speech functionality.
 """
 
 import logging
+import re
 import sys
 from typing import Optional, Dict, Any
 from pathlib import Path
+
+
+# Security constants for input validation
+MAX_TEXT_LENGTH = 500  # Max length for TTS text
+MAX_KEY_LENGTH = 10    # Max length for key input
+MAX_ACTIVITY_NAME_LENGTH = 50  # Max length for activity names
+MAX_ANIMATION_NAME_LENGTH = 50  # Max length for animation names
+VALID_ACTIVITIES = {'letters_numbers', 'drawing', 'colors_shapes', 'coloring', 'dot2dot', 'sounds'}
+VALID_THEMES = {'light', 'dark'}
+ALPHANUMERIC_PATTERN = re.compile(r'^[a-zA-Z0-9_]+$')
 
 # Import existing modules
 from toddler_typing.__version__ import __version__
@@ -60,6 +71,24 @@ class ToddlerTypingAPI:
 
     # === Activity Management ===
 
+    def _validate_string(self, value: str, max_length: int, field_name: str) -> Optional[str]:
+        """
+        Validate a string input for security.
+
+        Args:
+            value: String to validate
+            max_length: Maximum allowed length
+            field_name: Name of the field for error messages
+
+        Returns:
+            Error message if invalid, None if valid
+        """
+        if not isinstance(value, str):
+            return f"Invalid {field_name}: must be a string"
+        if len(value) > max_length:
+            return f"Invalid {field_name}: exceeds maximum length of {max_length}"
+        return None
+
     def start_activity(self, activity_name: str) -> Dict[str, Any]:
         """
         Start an educational activity.
@@ -70,6 +99,17 @@ class ToddlerTypingAPI:
         Returns:
             Dictionary with status and activity info
         """
+        # Input validation
+        validation_error = self._validate_string(activity_name, MAX_ACTIVITY_NAME_LENGTH, "activity_name")
+        if validation_error:
+            logger.warning(f"Invalid activity name: {validation_error}")
+            return {'success': False, 'error': validation_error}
+
+        # Validate activity name is in allowed list
+        if activity_name not in VALID_ACTIVITIES:
+            logger.warning(f"Unknown activity requested: {activity_name}")
+            return {'success': False, 'error': 'Unknown activity'}
+
         logger.info(f"Starting activity: {activity_name}")
 
         try:
@@ -203,6 +243,12 @@ class ToddlerTypingAPI:
         Returns:
             Dictionary with status
         """
+        # Input validation
+        validation_error = self._validate_string(text, MAX_TEXT_LENGTH, "text")
+        if validation_error:
+            logger.warning(f"Invalid TTS text: {validation_error}")
+            return {'success': False, 'error': 'Invalid text input'}
+
         try:
             if self.settings.get('voice_enabled'):
                 self.voice_manager.speak(text, interrupt=interrupt)
@@ -210,7 +256,7 @@ class ToddlerTypingAPI:
             return {'success': False, 'message': 'Voice disabled'}
         except Exception as e:
             logger.error(f"Failed to speak text: {e}")
-            return {'success': False, 'error': str(e)}
+            return {'success': False, 'error': 'Speech synthesis failed'}
 
     def speak_text(self, text: str) -> Dict[str, Any]:
         """
@@ -270,14 +316,39 @@ class ToddlerTypingAPI:
             Dictionary with status
         """
         try:
-            # Update internal settings
-            self.settings.update(settings)
+            # Input validation - only allow known settings keys
+            allowed_keys = {'theme', 'fullscreen', 'voice_enabled', 'keyboard_lock_enabled', 'volume'}
+            if not isinstance(settings, dict):
+                return {'success': False, 'error': 'Invalid settings format'}
+
+            # Filter to only allowed keys and validate values
+            validated_settings = {}
+            for key, value in settings.items():
+                if key not in allowed_keys:
+                    logger.warning(f"Ignoring unknown setting key: {key}")
+                    continue
+
+                # Validate specific settings
+                if key == 'theme' and value not in VALID_THEMES:
+                    logger.warning(f"Invalid theme value: {value}")
+                    continue
+                if key in ('fullscreen', 'voice_enabled', 'keyboard_lock_enabled') and not isinstance(value, bool):
+                    logger.warning(f"Invalid boolean value for {key}: {value}")
+                    continue
+                if key == 'volume' and (not isinstance(value, (int, float)) or value < 0 or value > 1):
+                    logger.warning(f"Invalid volume value: {value}")
+                    continue
+
+                validated_settings[key] = value
+
+            # Update internal settings with validated values
+            self.settings.update(validated_settings)
 
             # Apply settings that need immediate action
-            if 'voice_enabled' in settings:
-                self.voice_manager.set_mute(not settings['voice_enabled'])
+            if 'voice_enabled' in validated_settings:
+                self.voice_manager.set_mute(not validated_settings['voice_enabled'])
 
-            logger.info(f"Settings saved: {settings}")
+            logger.info(f"Settings saved: {validated_settings}")
 
             return {
                 'success': True,
@@ -288,7 +359,7 @@ class ToddlerTypingAPI:
             logger.error(f"Failed to save settings: {e}")
             return {
                 'success': False,
-                'error': str(e)
+                'error': 'Failed to save settings'
             }
 
     def load_settings(self) -> Dict[str, Any]:
@@ -356,6 +427,18 @@ class ToddlerTypingAPI:
             Dictionary with result and star info
         """
         try:
+            # Input validation
+            for key, name in [(pressed_key, "pressed_key"), (expected_key, "expected_key")]:
+                validation_error = self._validate_string(key, MAX_KEY_LENGTH, name)
+                if validation_error:
+                    logger.warning(f"Invalid key input: {validation_error}")
+                    return {'success': False, 'error': 'Invalid key input'}
+
+                # Only allow alphanumeric characters
+                if not re.match(r'^[a-zA-Z0-9]+$', key.strip()):
+                    logger.warning(f"Invalid characters in {name}: {key}")
+                    return {'success': False, 'error': 'Invalid key characters'}
+
             # Normalize keys for comparison
             pressed = pressed_key.upper().strip()
             expected = expected_key.upper().strip()
@@ -437,6 +520,16 @@ class ToddlerTypingAPI:
             Dictionary with status and total stars
         """
         try:
+            # Input validation
+            if activity not in VALID_ACTIVITIES:
+                logger.warning(f"Invalid activity for star award: {activity}")
+                return {'success': False, 'error': 'Invalid activity'}
+
+            # Validate count is reasonable (prevent abuse)
+            if not isinstance(count, int) or count < 0 or count > 10:
+                logger.warning(f"Invalid star count: {count}")
+                return {'success': False, 'error': 'Invalid star count'}
+
             self.progress_manager.award_stars(activity, count)
             total = self.progress_manager.get_total_stars()
 

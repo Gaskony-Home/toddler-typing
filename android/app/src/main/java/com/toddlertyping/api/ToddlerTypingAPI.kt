@@ -19,6 +19,16 @@ class ToddlerTypingAPI(private val context: Context) {
     private val tag = "ToddlerTypingAPI"
     private val gson = Gson()
 
+    // Security constants for input validation
+    companion object {
+        private const val MAX_TEXT_LENGTH = 500
+        private const val MAX_KEY_LENGTH = 10
+        private const val MAX_ACTIVITY_NAME_LENGTH = 50
+        private val VALID_ACTIVITIES = setOf("letters_numbers", "drawing", "colors_shapes", "coloring", "dot2dot", "sounds")
+        private val VALID_THEMES = setOf("light", "dark")
+        private val ALPHANUMERIC_PATTERN = Regex("^[a-zA-Z0-9]+$")
+    }
+
     private var currentActivity: String? = null
     private val voiceManager: VoiceManager = VoiceManager(context)
     private val progressManager: ProgressManager = ProgressManager(context)
@@ -28,10 +38,33 @@ class ToddlerTypingAPI(private val context: Context) {
         Log.i(tag, "ToddlerTypingAPI initialized")
     }
 
+    // === Input Validation Helpers ===
+
+    private fun validateString(value: String?, maxLength: Int, fieldName: String): String? {
+        if (value == null) return "Invalid $fieldName: must not be null"
+        if (value.length > maxLength) return "Invalid $fieldName: exceeds maximum length of $maxLength"
+        return null
+    }
+
+    private fun errorResponse(error: String): String {
+        return gson.toJson(mapOf("success" to false, "error" to error))
+    }
+
     // === Activity Management ===
 
     @JavascriptInterface
     fun startActivity(activityName: String): String {
+        // Input validation
+        validateString(activityName, MAX_ACTIVITY_NAME_LENGTH, "activityName")?.let { error ->
+            Log.w(tag, "Invalid activity name: $error")
+            return errorResponse(error)
+        }
+
+        if (activityName !in VALID_ACTIVITIES) {
+            Log.w(tag, "Unknown activity requested: $activityName")
+            return errorResponse("Unknown activity")
+        }
+
         Log.i(tag, "Starting activity: $activityName")
 
         return try {
@@ -110,6 +143,12 @@ class ToddlerTypingAPI(private val context: Context) {
 
     @JavascriptInterface
     fun speak(text: String, interrupt: Boolean): String {
+        // Input validation
+        validateString(text, MAX_TEXT_LENGTH, "text")?.let { error ->
+            Log.w(tag, "Invalid TTS text: $error")
+            return errorResponse("Invalid text input")
+        }
+
         return try {
             val settings = settingsManager.getSettings()
             if (settings.voiceEnabled) {
@@ -128,7 +167,7 @@ class ToddlerTypingAPI(private val context: Context) {
             gson.toJson(
                 mapOf(
                     "success" to false,
-                    "error" to e.message
+                    "error" to "Speech synthesis failed"
                 )
             )
         }
@@ -174,24 +213,37 @@ class ToddlerTypingAPI(private val context: Context) {
     @JavascriptInterface
     fun saveSettings(settingsJson: String): String {
         return try {
-            Log.i(tag, "Saving settings: $settingsJson")
+            // Input validation - limit JSON size
+            if (settingsJson.length > 1000) {
+                Log.w(tag, "Settings JSON too large: ${settingsJson.length}")
+                return errorResponse("Invalid settings: input too large")
+            }
 
-            val settingsMap = gson.fromJson<Map<String, Any>>(
-                settingsJson,
-                Map::class.java
-            ) as Map<String, Any>
+            Log.i(tag, "Saving settings")
+
+            val settingsMap = try {
+                gson.fromJson<Map<String, Any>>(settingsJson, Map::class.java) as? Map<String, Any>
+                    ?: return errorResponse("Invalid settings format")
+            } catch (e: Exception) {
+                Log.w(tag, "Invalid JSON in settings: ${e.message}")
+                return errorResponse("Invalid settings format")
+            }
 
             val settings = settingsManager.getSettings()
+            val allowedKeys = setOf("voice_enabled", "fullscreen", "theme")
 
-            // Update settings
-            settingsMap["voice_enabled"]?.let {
-                settings.voiceEnabled = it as Boolean
-            }
-            settingsMap["fullscreen"]?.let {
-                settings.fullscreen = it as Boolean
-            }
-            settingsMap["theme"]?.let {
-                settings.theme = it as String
+            // Update settings with validation
+            settingsMap.forEach { (key, value) ->
+                if (key !in allowedKeys) {
+                    Log.w(tag, "Ignoring unknown setting key: $key")
+                    return@forEach
+                }
+
+                when (key) {
+                    "voice_enabled" -> if (value is Boolean) settings.voiceEnabled = value
+                    "fullscreen" -> if (value is Boolean) settings.fullscreen = value
+                    "theme" -> if (value is String && value in VALID_THEMES) settings.theme = value
+                }
             }
 
             settingsManager.saveSettings(settings)
@@ -207,7 +259,7 @@ class ToddlerTypingAPI(private val context: Context) {
             gson.toJson(
                 mapOf(
                     "success" to false,
-                    "error" to e.message
+                    "error" to "Failed to save settings"
                 )
             )
         }
@@ -270,6 +322,19 @@ class ToddlerTypingAPI(private val context: Context) {
 
     @JavascriptInterface
     fun checkLetterNumberAnswer(pressedKey: String, expectedKey: String): String {
+        // Input validation
+        for ((key, name) in listOf(pressedKey to "pressedKey", expectedKey to "expectedKey")) {
+            validateString(key, MAX_KEY_LENGTH, name)?.let { error ->
+                Log.w(tag, "Invalid key input: $error")
+                return errorResponse("Invalid key input")
+            }
+
+            if (!ALPHANUMERIC_PATTERN.matches(key.trim())) {
+                Log.w(tag, "Invalid characters in $name: $key")
+                return errorResponse("Invalid key characters")
+            }
+        }
+
         return try {
             val pressed = pressedKey.uppercase().trim()
             val expected = expectedKey.uppercase().trim()
@@ -348,6 +413,17 @@ class ToddlerTypingAPI(private val context: Context) {
 
     @JavascriptInterface
     fun awardStars(activity: String, count: Int): String {
+        // Input validation
+        if (activity !in VALID_ACTIVITIES) {
+            Log.w(tag, "Invalid activity for star award: $activity")
+            return errorResponse("Invalid activity")
+        }
+
+        if (count < 0 || count > 10) {
+            Log.w(tag, "Invalid star count: $count")
+            return errorResponse("Invalid star count")
+        }
+
         return try {
             progressManager.awardStars(activity, count)
             val total = progressManager.getAllStars()
