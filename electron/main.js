@@ -1,3 +1,7 @@
+// Handle Squirrel.Windows installer events (install/update/uninstall)
+// This must be at the very top before any other code runs
+if (require('electron-squirrel-startup')) process.exit(0);
+
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { registerIpcHandlers } = require('./ipc-handlers');
