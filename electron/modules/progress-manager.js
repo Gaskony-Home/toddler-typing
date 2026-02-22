@@ -9,20 +9,23 @@ const LEVEL_THRESHOLDS = {
 };
 
 const progressSchema = {
-  total_stars: { type: 'number', default: 0 },
-  current_level: { type: 'number', default: 1 },
-  stars_by_activity: {
-    type: 'object',
-    default: {
-      letters_numbers: 0,
-      drawing: 0,
-      colors_shapes: 0,
-      coloring: 0,
-      dot2dot: 0,
-      sounds: 0
-    }
-  },
-  last_updated: { type: 'string', default: '' }
+  type: 'object',
+  properties: {
+    total_stars: { type: 'number', default: 0 },
+    current_level: { type: 'number', default: 1 },
+    stars_by_activity: {
+      type: 'object',
+      default: {
+        letters_numbers: 0,
+        drawing: 0,
+        colors_shapes: 0,
+        coloring: 0,
+        dot2dot: 0,
+        sounds: 0
+      }
+    },
+    last_updated: { type: 'string', default: '' }
+  }
 };
 
 class ProgressManager {
