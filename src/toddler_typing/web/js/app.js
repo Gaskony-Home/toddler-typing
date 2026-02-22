@@ -856,6 +856,8 @@ async function initApp() {
         } catch (error) {
             console.error('3D Character initialization failed:', error);
             console.log('Falling back to 2D character...');
+            // Clear any leftover 3D elements (canvas, etc.) before 2D fallback
+            characterContainer.innerHTML = '';
             // Try 2D fallback
             if (typeof CharacterManager2D !== 'undefined') {
                 characterManager = new CharacterManager2D(characterContainer);
