@@ -32,5 +32,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   quitAndInstall: () => ipcRenderer.invoke('quit-and-install'),
   onUpdateAvailable: (callback) => ipcRenderer.on('update-available', (_event, info) => callback(info)),
   onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', () => callback()),
-  onUpdateNotAvailable: (callback) => ipcRenderer.on('update-not-available', () => callback())
+  onUpdateNotAvailable: (callback) => ipcRenderer.on('update-not-available', () => callback()),
+
+  // TTS (Piper)
+  ttsSpeak: (options) => ipcRenderer.invoke('tts-speak', options),
+  ttsStop: () => ipcRenderer.invoke('tts-stop'),
+  ttsIsAvailable: () => ipcRenderer.invoke('tts-is-available')
 });

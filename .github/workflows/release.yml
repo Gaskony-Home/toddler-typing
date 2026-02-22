@@ -35,6 +35,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Download TTS model
+        run: npm run setup:tts
+
       - name: Build installers
         run: ${{ matrix.cmd }} -- --publish never
 

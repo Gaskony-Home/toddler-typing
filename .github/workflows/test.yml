@@ -24,6 +24,9 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    - name: Download TTS model
+      run: npm run setup:tts
+
     - name: Verify Android asset sync
       run: |
         npm run sync-android

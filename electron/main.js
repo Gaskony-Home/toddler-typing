@@ -8,10 +8,12 @@ const path = require('path');
 const { registerIpcHandlers } = require('./ipc-handlers');
 const { KeyboardLocker } = require('./modules/keyboard-locker');
 const { AutoUpdater } = require('./modules/auto-updater');
+const { TtsEngine } = require('./modules/tts-engine');
 
 let mainWindow = null;
 let keyboardLocker = null;
 let autoUpdaterInstance = null;
+let ttsEngine = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -46,7 +48,43 @@ app.whenReady().then(() => {
   keyboardLocker = new KeyboardLocker();
   registerIpcHandlers(keyboardLocker);
 
+  // Initialize Piper TTS engine
+  ttsEngine = new TtsEngine();
+
+  // TTS IPC handlers
+  ipcMain.handle('tts-speak', async (_event, { text, speed }) => {
+    if (!ttsEngine || !ttsEngine.isAvailable()) {
+      return { available: false };
+    }
+    try {
+      const { samples, sampleRate } = ttsEngine.generate(text, speed);
+      return {
+        available: true,
+        samples: samples.buffer,
+        sampleRate,
+        duration: samples.length / sampleRate,
+      };
+    } catch (err) {
+      console.error('[TTS] Generate failed:', err.message);
+      return { available: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('tts-stop', () => {
+    // Audio playback is managed in the renderer; nothing to do here
+    return { success: true };
+  });
+
+  ipcMain.handle('tts-is-available', () => {
+    return ttsEngine ? ttsEngine.isAvailable() : false;
+  });
+
   createWindow();
+
+  // Warm up TTS engine in background to reduce first-utterance latency
+  if (ttsEngine && ttsEngine.isAvailable()) {
+    setTimeout(() => ttsEngine.warmup(), 1000);
+  }
 
   // Initialize auto-updater after window is created
   autoUpdaterInstance = new AutoUpdater(mainWindow);
