@@ -51,6 +51,10 @@ app.whenReady().then(() => {
   // Initialize auto-updater after window is created
   autoUpdaterInstance = new AutoUpdater(mainWindow);
 
+  ipcMain.handle('check-for-updates', () => {
+    if (autoUpdaterInstance) autoUpdaterInstance.checkForUpdates();
+  });
+
   ipcMain.handle('download-update', () => {
     if (autoUpdaterInstance) autoUpdaterInstance.downloadUpdate();
   });
