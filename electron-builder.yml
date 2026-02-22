@@ -28,7 +28,7 @@ win:
       arch:
         - x64
   icon: src/toddler_typing/web/assets/dino_character.ico
-  artifactName: ${productName}-Setup-${version}.${ext}
+  artifactName: Toddler-Typing-Setup-${version}.${ext}
 
 nsis:
   oneClick: false
@@ -49,7 +49,7 @@ mac:
   icon: src/toddler_typing/web/assets/dino_character.png
   category: public.app-category.education
   identity: null
-  artifactName: ${productName}-${version}-${arch}.${ext}
+  artifactName: Toddler-Typing-${version}-${arch}.${ext}
 
 dmg:
   sign: false
@@ -62,7 +62,7 @@ linux:
         - x64
   icon: src/toddler_typing/web/assets/dino_character.png
   category: Education
-  artifactName: ${productName}-${version}-${arch}.${ext}
+  artifactName: Toddler-Typing-${version}-${arch}.${ext}
 
 # Auto-update configuration
 publish:
