@@ -3,7 +3,6 @@ const { ProgressManager } = require('./modules/progress-manager');
 const { SettingsManager } = require('./modules/settings-manager');
 
 // Security constants
-const MAX_TEXT_LENGTH = 500;
 const MAX_KEY_LENGTH = 10;
 const VALID_ACTIVITIES = new Set(['letters_numbers', 'drawing', 'colors_shapes', 'coloring', 'dot2dot', 'sounds']);
 const VALID_THEMES = new Set(['light', 'dark']);
@@ -45,13 +44,11 @@ function registerIpcHandlers(kbLocker) {
     }
 
     if (currentActivity) {
-      // Stop previous activity
       if (keyboardLocker) keyboardLocker.disable();
     }
 
     currentActivity = activityName;
 
-    // Enable keyboard lock if setting is on
     const settings = settingsManager.getAll();
     if (settings.keyboard_lock_enabled && keyboardLocker) {
       keyboardLocker.enable();
@@ -68,44 +65,6 @@ function registerIpcHandlers(kbLocker) {
     currentActivity = null;
     if (keyboardLocker) keyboardLocker.disable();
     return { success: true, message: 'Activity stopped successfully' };
-  });
-
-  // === Voice/Audio (handled in renderer via Web Speech API) ===
-
-  ipcMain.handle('speak', (_event, text, _interrupt) => {
-    if (!validateString(text, MAX_TEXT_LENGTH)) {
-      return { success: false, error: 'Invalid text input' };
-    }
-    const settings = settingsManager.getAll();
-    if (!settings.voice_enabled) {
-      return { success: false, message: 'Voice disabled' };
-    }
-    // TTS is handled client-side via Web Speech API + dino-voice.js
-    return { success: true };
-  });
-
-  ipcMain.handle('speak-text', (_event, text) => {
-    if (!validateString(text, MAX_TEXT_LENGTH)) {
-      return { success: false, error: 'Invalid text input' };
-    }
-    return { success: true };
-  });
-
-  ipcMain.handle('toggle-voice', () => {
-    const settings = settingsManager.getAll();
-    const newEnabled = !settings.voice_enabled;
-    settingsManager.set('voice_enabled', newEnabled);
-    return { success: true, voice_enabled: newEnabled, muted: !newEnabled };
-  });
-
-  ipcMain.handle('set-voice-enabled', (_event, enabled) => {
-    settingsManager.set('voice_enabled', !!enabled);
-    return { success: true, voice_enabled: !!enabled };
-  });
-
-  ipcMain.handle('set-muted', (_event, muted) => {
-    settingsManager.set('voice_enabled', !muted);
-    return { success: true, muted: !!muted };
   });
 
   // === Settings ===
@@ -165,7 +124,6 @@ function registerIpcHandlers(kbLocker) {
   });
 
   ipcMain.handle('check-letter-number-answer', (_event, pressedKey, expectedKey) => {
-    // Input validation
     for (const key of [pressedKey, expectedKey]) {
       if (!validateString(key, MAX_KEY_LENGTH)) {
         return { success: false, error: 'Invalid key input' };
@@ -194,7 +152,6 @@ function registerIpcHandlers(kbLocker) {
         result.level = progressManager.currentLevel;
         result.level_up = levelUp;
 
-        // Build encouragement message (spoken client-side)
         let message = ENCOURAGEMENTS[Math.floor(Math.random() * ENCOURAGEMENTS.length)];
         if (levelUp) {
           message = `${message} Level up! You're now level ${result.level}!`;
@@ -226,24 +183,6 @@ function registerIpcHandlers(kbLocker) {
       stars_awarded: count,
       total_stars: progressManager.totalStars
     };
-  });
-
-  // === Character Control (frontend-only, just acknowledge) ===
-
-  ipcMain.handle('play-character-animation', (_event, animationName, loop) => {
-    return { success: true, animation: animationName, loop };
-  });
-
-  ipcMain.handle('set-character-emotion', (_event, emotion) => {
-    return { success: true, emotion };
-  });
-
-  ipcMain.handle('character-start-talking', () => {
-    return { success: true };
-  });
-
-  ipcMain.handle('character-stop-talking', () => {
-    return { success: true };
   });
 
   // === System ===

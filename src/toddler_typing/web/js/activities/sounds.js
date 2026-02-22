@@ -29,9 +29,7 @@ class SoundsActivity {
         this.setupNavigation();
 
         // Speak welcome message
-        if (typeof PythonAPI !== 'undefined' && PythonAPI.call) {
-            PythonAPI.call('speak', 'Let\\'s learn letter sounds!');
-        }
+        AppAPI.call('speak', "Let's learn letter sounds!");
 
         // Character wave
         if (window.characterManager) {
@@ -135,10 +133,7 @@ class SoundsActivity {
 
     speakSound() {
         const currentSound = this.sounds[this.currentIndex];
-
-        if (typeof PythonAPI !== 'undefined' && PythonAPI.call) {
-            PythonAPI.call('speak', currentSound.description);
-        }
+        AppAPI.call('speak', currentSound.description);
 
         if (window.characterManager) {
             window.characterManager.playAnimation('talk', true);
@@ -155,9 +150,7 @@ class SoundsActivity {
         const currentSound = this.sounds[this.currentIndex];
         const example = currentSound.examples[index];
 
-        if (typeof PythonAPI !== 'undefined' && PythonAPI.call) {
-            PythonAPI.call('speak', example);
-        }
+        AppAPI.call('speak', example);
 
         // Update active state
         document.querySelectorAll('.sound-example-btn').forEach((btn, i) => {
@@ -188,11 +181,9 @@ class SoundsActivity {
 
     stop() {
         console.log('Stopping Sounds activity');
-        // Remove keyboard listener
         if (this.keyPressHandler) {
             document.removeEventListener('keydown', this.keyPressHandler);
         }
-        // Clear reference
         window.currentSoundsActivity = null;
     }
 }

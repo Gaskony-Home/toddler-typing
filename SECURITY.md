@@ -18,7 +18,9 @@ We will respond within 48 hours.
 - **No Data Collection**: Zero telemetry or personal data
 - **Minimal Dependencies**: Only essential libraries
 - **Open Source**: All code is auditable
-- **Input Validation**: All configuration values are validated
+- **Input Validation**: All IPC inputs are validated and sanitized
+- **Content Security Policy**: Strict CSP prevents script injection
+- **Context Isolation**: Electron renderer is sandboxed
 
 ### Keyboard Lock (Windows Only)
 
@@ -40,29 +42,27 @@ The keyboard lock feature:
 
 ### For Parents
 
-1. Test the app in development mode first
-2. Learn the exit combination: **Ctrl+Shift+Esc**
-3. Supervise young children during initial use
-4. Use production config (`config.production.json`) for toddler use
+1. Test the app before handing it to your child
+2. Supervise young children during initial use
+3. Settings persist automatically via electron-conf
 
 ### For Developers
 
-1. Validate all user inputs
-2. Never use `eval()` or `exec()`
-3. Use parameterized paths (no string concatenation)
+1. Validate all IPC inputs (see `ipc-handlers.js`)
+2. Never disable `contextIsolation` or `sandbox`
+3. Keep CSP strict - no `unsafe-eval`
 4. Review security implications of new features
 
 ## Known Limitations
 
 - Keyboard lock only works on Windows
 - Ctrl+Alt+Delete cannot be blocked (by design)
-- PyInstaller executables may trigger antivirus false positives
 
 ## Dependencies
 
-Core dependencies with pinned versions:
-- pygame==2.5.2
-- pynput==1.7.6
-- pillow==10.1.0
+Core dependencies:
+- electron ^40.x
+- electron-conf ^1.3.x
+- electron-updater ^6.x
 
 Keep dependencies updated and review changelogs for security patches.

@@ -11,8 +11,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        node-version: ['18', '20']
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: ['20', '22']
 
     steps:
     - uses: actions/checkout@v4
@@ -23,9 +23,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
 
     - name: Install dependencies
-      run: npm install
+      run: npm ci
 
-    - name: Verify app can start
-      run: npx electron . --no-sandbox --disable-gpu --headless 2>&1 &
-      timeout-minutes: 1
-      continue-on-error: true
+    - name: Package app
+      run: npx electron-forge package

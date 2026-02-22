@@ -1,125 +1,99 @@
 # Development Guide
 
-## Getting Started
+## Prerequisites
 
-### Prerequisites
-- Python 3.8+
-- pip
+- Node.js 20+ (LTS recommended)
+- npm
 
-### Setup
+## Setup
+
 ```bash
 # Install dependencies
-pip install -r requirements.txt
+npm install
 
-# Install dev dependencies
-pip install -r requirements-dev.txt
-
-# Run from source
-python run.py
+# Run the app
+npm start
 ```
 
 ## Project Structure
 
 ```
-src/toddler_typing/
-├── main.py              # Entry point
-├── __version__.py       # Version number
-├── config/              # Configuration management
-│   └── settings.py
-├── ui/                  # User interface
-│   ├── main_menu.py
-│   └── button.py
-├── educational/         # Learning activities
-│   ├── letters_numbers.py
-│   ├── colors_shapes.py
-│   └── coloring.py
-├── drawing/             # Drawing canvas
-│   └── canvas.py
-├── keyboard/            # Keyboard lock (Windows)
-│   └── locker.py
-├── audio/               # Sound/TTS
-│   └── voice_manager.py
-└── assets/              # Images, sounds, fonts
+toddler-typing/
+├── electron/                      # Main process (Node.js)
+│   ├── main.js                   # Window creation, app lifecycle
+│   ├── preload.js                # Context bridge (electronAPI)
+│   ├── ipc-handlers.js           # IPC message handlers
+│   └── modules/
+│       ├── progress-manager.js   # Star/level tracking (electron-conf)
+│       ├── settings-manager.js   # User preferences (electron-conf)
+│       ├── keyboard-locker.js    # System key blocking (Windows)
+│       └── auto-updater.js       # GitHub Releases auto-update
+├── src/toddler_typing/web/       # Renderer process (browser)
+│   ├── index.html                # Main page
+│   ├── css/custom.css            # All styles
+│   ├── js/
+│   │   ├── app.js                # App initialization, managers, UI
+│   │   ├── api-bridge.js         # window.appBridge (Electron/Android)
+│   │   ├── dino-voice.js         # Web Speech API TTS
+│   │   ├── character_manager.js  # 3D character (Three.js + GLTFLoader)
+│   │   ├── character_manager_2d.js # 2D CSS-animated fallback
+│   │   ├── character-setup.js    # Character manager init logic
+│   │   └── activities/           # One file per activity
+│   ├── assets/                   # Images, SVGs, dot2dot, colouring
+│   └── libs/                     # Vendored: Bootstrap, Three.js, fonts
+├── android/                      # Android WebView wrapper
+├── forge.config.js               # Electron Forge packaging config
+└── package.json
 ```
 
-## Version Management
+## Architecture
 
-Version is stored in `src/toddler_typing/__version__.py`:
+### Communication Flow
 
-```bash
-# Increment version
-python increment_version.py patch   # 1.0.0 -> 1.0.1
-python increment_version.py minor   # 1.0.0 -> 1.1.0
-python increment_version.py major   # 1.0.0 -> 2.0.0
 ```
+Frontend (renderer)  <-->  api-bridge.js (window.appBridge)
+                              |
+                     electronAPI (preload.js)
+                              |
+                     ipc-handlers.js (main process)
+                              |
+                     electron-conf (persistence)
+```
+
+- **TTS**: Handled entirely client-side via `dino-voice.js` (Web Speech API)
+- **Character animations**: Handled client-side by character managers
+- **Settings/Progress**: Persisted via `electron-conf` in main process
+
+### Key Patterns
+
+- `AppAPI` object in `app.js` wraps `window.appBridge` calls with error handling
+- Activities are classes instantiated by `ActivityManager` when selected
+- `VoiceToAnimationBridge` intercepts speak calls to sync character lip-sync
 
 ## Building
 
-### Run from Source
 ```bash
-python run.py
+# Package (unpacked)
+npm run package
+
+# Create installer
+npm run make
 ```
 
-### Build Executable
-```bash
-pip install -r requirements-build.txt
-python build.py
-```
-Output: `dist/toddler-typing/toddler-typing.exe`
-
-### Create Release Package
-```bash
-python make-portable.py
-```
-Output: `releases/toddler-typing-portable-*.zip`
-
-## Testing
-
-```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=src/toddler_typing
-
-# Format code
-black src/ tests/
-
-# Type checking
-mypy src/
-```
+Output goes to `out/`.
 
 ## Adding New Activities
 
-1. Create a new module in `src/toddler_typing/educational/`
-2. Implement the activity class with:
-   - `handle_event(event)` - Handle user input
-   - `update()` - Update game state
-   - `draw(screen)` - Render to screen
-3. Add the activity to `ui/main_menu.py`
-
-## Configuration
-
-Two config modes:
-- `config.dev.json` - Development (windowed, easy exit)
-- `config.production.json` - Production (fullscreen, keyboard lock)
-
-Copy desired config to `config.json`:
-```bash
-cp config.dev.json config.json
-```
+1. Create `src/toddler_typing/web/js/activities/my_activity.js`
+2. Add a `MyActivity` class with `start()` and `stop()` methods
+3. Add the activity name to `VALID_ACTIVITIES` in `ipc-handlers.js`
+4. Add HTML content method in `ActivityManager` (`app.js`)
+5. Add the `<script>` tag in `index.html`
+6. Add a menu card button in `index.html`
 
 ## Code Style
 
-- Use type hints
-- Follow PEP 8
-- Run `black` before committing
-- Keep functions small and focused
-- Add docstrings to public methods
-
-## Security Guidelines
-
-- Validate all user inputs
-- Never use `eval()` or `exec()`
-- Use parameterized paths
-- Review [SECURITY.md](../SECURITY.md) before adding features
+- Vanilla JavaScript (no build step, no transpiler)
+- Bootstrap 5.3 for UI components
+- CSS custom properties for theming
+- No TypeScript (keep it simple for contributors)

@@ -1,10 +1,10 @@
 /**
- * API Bridge - Shims window.pywebview.api to the active backend
+ * API Bridge - Provides window.appBridge to the active backend
  *
  * Priority: electronAPI (Electron) > Android (Kotlin WebView) > graceful degradation
  *
- * This allows ALL existing frontend code (activities, character managers, app.js)
- * to continue calling pywebview.api.methodName() without any changes.
+ * TTS is handled entirely client-side via DinoVoice (Web Speech API).
+ * Character animations are handled client-side by the character managers.
  */
 
 (function () {
@@ -14,15 +14,7 @@
   const hasElectron = typeof window.electronAPI !== 'undefined';
   const hasAndroid = typeof window.Android !== 'undefined';
 
-  // Create the pywebview.api namespace if it doesn't exist
-  if (typeof window.pywebview === 'undefined') {
-    window.pywebview = {};
-  }
-  if (typeof window.pywebview.api === 'undefined') {
-    window.pywebview.api = {};
-  }
-
-  const api = window.pywebview.api;
+  const api = {};
 
   if (hasElectron) {
     console.log('[api-bridge] Using Electron backend');
@@ -32,24 +24,13 @@
     api.start_activity = (activityName) => e.startActivity(activityName);
     api.stop_activity = () => e.stopActivity();
 
-    // Voice/Audio - delegates to DinoVoice (client-side TTS) + IPC for state tracking
+    // Voice - client-side TTS via DinoVoice
     api.speak = async (text, interrupt = false) => {
-      // Speak client-side via Web Speech API (dino-voice.js)
       if (window.DinoVoice && !window.AppState?.isMuted) {
         window.DinoVoice.speak(text, interrupt);
       }
-      // Also notify backend for state tracking
-      return e.speak(text, interrupt);
+      return { success: true };
     };
-    api.speak_text = async (text) => {
-      if (window.DinoVoice && !window.AppState?.isMuted) {
-        window.DinoVoice.speak(text, true);
-      }
-      return e.speakText(text);
-    };
-    api.toggle_voice = () => e.toggleVoice();
-    api.set_voice_enabled = (enabled) => e.setVoiceEnabled(enabled);
-    api.set_muted = (muted) => e.setMuted(muted);
 
     // Settings
     api.save_settings = (settings) => e.saveSettings(settings);
@@ -77,12 +58,6 @@
     api.get_progress = () => e.getProgress();
     api.award_stars = (activity, count) => e.awardStars(activity, count);
 
-    // Character control
-    api.play_character_animation = (animationName, loop) => e.playCharacterAnimation(animationName, loop);
-    api.set_character_emotion = (emotion) => e.setCharacterEmotion(emotion);
-    api.character_start_talking = () => e.characterStartTalking();
-    api.character_stop_talking = () => e.characterStopTalking();
-
     // System
     api.get_version = () => e.getVersion();
     api.get_system_info = () => e.getSystemInfo();
@@ -102,8 +77,12 @@
       }
     };
 
-    api.speak = (text, interrupt) => callAndroid('speak', text, !!interrupt);
-    api.speak_text = (text) => callAndroid('speak', text, true);
+    api.speak = (text, interrupt) => {
+      if (window.DinoVoice && !window.AppState?.isMuted) {
+        window.DinoVoice.speak(text, !!interrupt);
+      }
+      return { success: true };
+    };
     api.start_activity = (name) => callAndroid('startActivity', name);
     api.stop_activity = () => callAndroid('stopActivity');
     api.save_settings = (s) => callAndroid('saveSettings', JSON.stringify(s));
@@ -112,8 +91,6 @@
     api.check_letter_number_answer = (p, e) => callAndroid('checkLetterNumberAnswer', p, e);
     api.get_progress = () => callAndroid('getProgress');
     api.award_stars = (act, cnt) => callAndroid('awardStars', act, cnt);
-    api.play_character_animation = (n, l) => callAndroid('playCharacterAnimation', n, !!l);
-    api.set_character_emotion = (e) => callAndroid('setCharacterEmotion', e);
     api.get_version = () => callAndroid('getVersion');
     api.get_system_info = () => callAndroid('getSystemInfo');
 
@@ -123,17 +100,14 @@
     // Provide graceful no-op stubs so the app doesn't crash
     const noop = () => Promise.resolve({ success: false, message: 'No backend available' });
     const methods = [
-      'start_activity', 'stop_activity', 'speak', 'speak_text',
-      'toggle_voice', 'set_voice_enabled', 'set_muted',
+      'start_activity', 'stop_activity',
       'save_settings', 'load_settings',
       'get_random_letter_or_number', 'check_letter_number_answer',
       'get_progress', 'award_stars',
-      'play_character_animation', 'set_character_emotion',
-      'character_start_talking', 'character_stop_talking',
       'get_version', 'get_system_info'
     ];
     for (const m of methods) {
-      if (!api[m]) api[m] = noop;
+      api[m] = noop;
     }
 
     // Even without backend, try client-side TTS
@@ -141,11 +115,8 @@
       if (window.DinoVoice) window.DinoVoice.speak(text, interrupt);
       return { success: true };
     };
-    api.speak_text = async (text) => {
-      if (window.DinoVoice) window.DinoVoice.speak(text, true);
-      return { success: true };
-    };
   }
 
-  console.log('[api-bridge] Bridge initialized. pywebview.api methods:', Object.keys(api).join(', '));
+  window.appBridge = api;
+  console.log('[api-bridge] Bridge initialized. appBridge methods:', Object.keys(api).join(', '));
 })();
