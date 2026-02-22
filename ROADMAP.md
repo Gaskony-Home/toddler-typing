@@ -9,19 +9,29 @@ Future plans for Toddler Typing.
 - Drawing canvas
 - Coloring pages
 - Dot-to-dot games
-- Animal sounds
+- Letter sounds (phonics)
 - Animated dinosaur character
-- Windows desktop + Android tablet
+- Windows/macOS/Linux desktop (Electron) + Android tablet
 - Keyboard lock (Windows)
 - Fullscreen mode
+- Auto-updates via GitHub Releases
 
-## Planned Features
+## Completed
 
 ### Phase 1: Polish & Sound
-- [ ] Letter/number pronunciation (TTS)
+- [x] Letter/number pronunciation (TTS via Web Speech API)
+- [x] Animated celebrations (stars)
 - [ ] Success sound effects
 - [ ] Background music (optional)
-- [ ] Animated celebrations (confetti, stars)
+
+### Phase 3: Progress & Gamification
+- [x] Star rewards for correct answers
+- [x] Level progression system
+- [ ] Achievement badges
+- [ ] Progress tracking for parents
+- [ ] Multiple child profiles
+
+## Planned Features
 
 ### Phase 2: More Activities
 - [ ] Counting with visual objects
@@ -30,15 +40,7 @@ Future plans for Toddler Typing.
 - [ ] Memory card game
 - [ ] Simple puzzles
 
-### Phase 3: Progress & Gamification
-- [ ] Star rewards for correct answers
-- [ ] Level progression system
-- [ ] Achievement badges
-- [ ] Progress tracking for parents
-- [ ] Multiple child profiles
-
 ### Phase 4: Accessibility & Languages
-- [ ] Text-to-speech for all content
 - [ ] High contrast mode
 - [ ] Multiple language support
 - [ ] Colorblind-friendly palettes

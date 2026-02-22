@@ -1,4 +1,4 @@
-const { app, BrowserWindow, globalShortcut, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { registerIpcHandlers } = require('./ipc-handlers');
 const { KeyboardLocker } = require('./modules/keyboard-locker');
@@ -67,10 +67,6 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-  // Unregister all shortcuts
-  globalShortcut.unregisterAll();
-
-  // Clean up keyboard locker
   if (keyboardLocker) {
     keyboardLocker.cleanup();
   }
@@ -79,7 +75,6 @@ app.on('window-all-closed', () => {
 });
 
 app.on('will-quit', () => {
-  globalShortcut.unregisterAll();
   if (keyboardLocker) {
     keyboardLocker.cleanup();
   }

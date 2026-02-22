@@ -3,121 +3,98 @@
 ## Quick Start
 
 ```bash
-pip install -r requirements.txt
-python run.py
+npm install
+npm start
 ```
-
-## Configuration Modes
-
-### Development Mode
-For testing with easy exit:
-```bash
-copy config.dev.json config.json
-```
-- Windowed mode
-- ESC key to exit
-
-### Production Mode
-For toddler use:
-```bash
-copy config.production.json config.json
-```
-- Fullscreen mode
-- Keyboard lock enabled (Windows)
-- Exit: Ctrl+Shift+Esc
 
 ## Activities
 
 ### Letters & Numbers
 - Shows a letter or number on screen
-- Child presses the matching key
-- Visual and audio feedback on success
+- Child presses the matching key on the keyboard
+- Earns stars and levels up with correct answers
+- Voice encouragement via text-to-speech
 
 ### Colors & Shapes
-- Shows colored geometric shapes
-- Click anywhere to see a new shape
-- Names color and shape (with TTS)
+- Shows 6 colored shapes on screen
+- Voice tells the child which one to click
+- Celebrations for correct answers, gentle retry for wrong ones
 
 ### Drawing
-- Drawing canvas with multiple colors
-- Click colors to change color
-- Click numbers to change brush size
-- Clear button to start over
+- Free-form drawing canvas
+- 12 colors and 5 brush sizes
+- Save drawings as PNG files
 
 ### Coloring Pages
-- Pre-made pictures to color
-- Tap areas to fill with color
-- Multiple images available
+- Pre-made outline pictures to color in
+- Navigate between 6 different images
+- Save completed artwork
 
-### Dot-to-Dot
-- Connect numbered dots
-- Reveals picture when complete
+### Dot to Dot
+- Connect-the-dots images to draw over
+- Navigate between 6 different puzzles
+- Save completed pictures
 
-### Animal Sounds
-- Click animals to hear their sounds
+### Letter Sounds
+- Learn phonics (sh, ch, th, ph, etc.)
+- Click to hear the sound spoken
+- Example words for each sound
 
 ## Controls
 
-| Mode | Exit | Navigate |
-|------|------|----------|
-| Development | ESC | Click buttons |
-| Production | Ctrl+Shift+Esc | Click buttons |
+| Action | How |
+|--------|-----|
+| Start activity | Click an activity card |
+| Return to menu | Click "Back to Menu" |
+| Toggle theme | Click moon/sun icon |
+| Toggle mute | Click speaker icon |
+| Toggle fullscreen | Click fullscreen icon |
+
+## Settings
+
+Settings are managed automatically:
+- **Theme** (light/dark) - saved to localStorage
+- **Mute state** - saved to localStorage
+- **Progress** (stars, level) - saved via electron-conf
+
+Settings persist across app restarts.
 
 ## Safety Features
 
 ### Keyboard Lock (Windows Only)
-Blocks:
-- Windows key
-- Alt+Tab
-- Alt+F4
-- Other system shortcuts
+Blocks system keys like Windows key, Alt+Tab, and Alt+F4 to prevent toddlers from switching away.
 
-**Note:** Ctrl+Alt+Delete cannot be blocked (Windows security feature)
+**Note:** Ctrl+Alt+Delete cannot be blocked (Windows security feature).
 
 ### Fullscreen Mode
-Prevents:
-- Clicking outside the app
-- Accessing other programs
-- Accidental window closing
+Click the fullscreen button to prevent accidental clicks outside the app.
 
 ## Tips for Parents
 
-1. **Test first** - Use dev mode before production mode
-2. **Learn the exit** - Ctrl+Shift+Esc
-3. **Start simple** - Colors & Shapes first
-4. **Take breaks** - 10-15 minute sessions
-5. **Supervise** - Especially during first use
+1. **Start simple** - Colors & Shapes is a great first activity
+2. **Take breaks** - 10-15 minute sessions work best
+3. **Supervise** - especially during first use
+4. **Save artwork** - use the Save button in drawing activities
 
 ## Troubleshooting
 
-### Can't Exit
-- Press Ctrl+Shift+Esc together
-- If that fails, try Alt+F4
-- Last resort: restart computer
+### App Won't Start
+- Ensure Node.js 20+ is installed
+- Run `npm install` to install dependencies
+- Try `npm start` from the project directory
 
-### Keyboard Lock Not Working
-- Windows only
-- Try running as Administrator
-- Check `enable_keyboard_lock: true` in config.json
+### No Sound
+- Check mute button (speaker icon in header)
+- Ensure system volume is up
+- Web Speech API requires a supported browser/Electron version
 
-### Screen Size Issues
-Edit config.json:
-```json
-{
-  "fullscreen": false,
-  "screen_width": 1024,
-  "screen_height": 768
-}
-```
-
-### Won't Start
-- Check Python 3.8+ installed
-- Run `pip install -r requirements.txt`
-- Try with `enable_keyboard_lock: false`
+### Drawing Not Saving
+- The Save button downloads a PNG file
+- Check your browser/system download location
 
 ## Privacy
 
-- No internet connection
+- No internet connection required
 - No data collection
 - No ads
-- Completely offline
+- Settings stored locally on your device only

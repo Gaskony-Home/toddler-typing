@@ -118,8 +118,7 @@ class ColorsShapesActivity {
             instructionEl.textContent = text;
         }
 
-        // Speak via Python API
-        await PythonAPI.call('speak_text', text);
+        await AppAPI.call('speak', text);
     }
 
     async handleClick(clickedIndex) {
@@ -138,7 +137,7 @@ class ColorsShapesActivity {
             }
 
             // Play success sound/animation
-            await PythonAPI.call('speak_text', 'Great job!');
+            await AppAPI.call('speak', 'Great job!');
 
             // Wait a bit, then next round
             setTimeout(() => {
@@ -156,7 +155,7 @@ class ColorsShapesActivity {
             }
 
             // Play error sound
-            await PythonAPI.call('speak_text', 'Try again!');
+            await AppAPI.call('speak', 'Try again!');
 
             // Remove wrong class after animation
             setTimeout(() => {

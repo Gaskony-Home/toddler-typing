@@ -91,9 +91,16 @@ class ProgressManager {
 
   awardStars(activity, count) {
     if (!(activity in this.starsByActivity)) return;
-    for (let i = 0; i < count; i++) {
-      this.awardStar(activity);
-    }
+
+    const previousLevel = this.currentLevel;
+
+    this.totalStars += count;
+    this.starsByActivity[activity] += count;
+    this.currentLevel = this._calculateLevel(this.totalStars);
+
+    this._save();
+
+    return { levelUp: this.currentLevel > previousLevel };
   }
 
   getProgressSummary() {

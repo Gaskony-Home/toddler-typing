@@ -1,5 +1,3 @@
-const { FusesV1, FuseV1Options } = require('@electron-forge/shared-types');
-
 module.exports = {
   packagerConfig: {
     name: 'Toddler Typing',
@@ -23,7 +21,6 @@ module.exports = {
       name: '@electron-forge/maker-squirrel',
       config: {
         name: 'ToddlerTyping',
-        setupIcon: './src/toddler_typing/web/assets/dino_character.ico',
         description: 'A child-friendly educational app for learning letters, numbers, colors, and shapes'
       }
     },
