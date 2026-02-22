@@ -34,7 +34,7 @@ module.exports = {
       name: '@electron-forge/publisher-github',
       config: {
         repository: {
-          owner: 'nigelgwork',
+          owner: 'Gaskony-Home',
           name: 'toddler-typing'
         },
         prerelease: false
