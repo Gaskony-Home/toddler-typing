@@ -38,20 +38,21 @@
 
     // Letters & Numbers
     api.get_random_letter_or_number = async () => {
-      const result = await e.getRandomLetterOrNumber();
-      // Speak the instruction client-side
-      if (result?.success && result.voice_text && window.DinoVoice && !window.AppState?.isMuted) {
-        window.DinoVoice.speak(result.voice_text, true);
-      }
-      return result;
+      return await e.getRandomLetterOrNumber();
     };
     api.check_letter_number_answer = async (pressedKey, expectedKey) => {
-      const result = await e.checkLetterNumberAnswer(pressedKey, expectedKey);
-      // Speak encouragement client-side
-      if (result?.correct && result.encouragement && window.DinoVoice && !window.AppState?.isMuted) {
-        window.DinoVoice.speak(result.encouragement);
-      }
-      return result;
+      return await e.checkLetterNumberAnswer(pressedKey, expectedKey);
+    };
+
+    // Typing Game
+    api.get_typing_challenge = async (stage) => {
+      return await e.getTypingChallenge(stage);
+    };
+    api.check_typing_answer = async (pressedKey, expectedKey, stage) => {
+      return await e.checkTypingAnswer(pressedKey, expectedKey, stage);
+    };
+    api.get_typing_game_progress = async () => {
+      return await e.getTypingGameProgress();
     };
 
     // Progress/Gamification
@@ -89,6 +90,9 @@
     api.load_settings = () => callAndroid('loadSettings');
     api.get_random_letter_or_number = () => callAndroid('getRandomLetterOrNumber');
     api.check_letter_number_answer = (p, e) => callAndroid('checkLetterNumberAnswer', p, e);
+    api.get_typing_challenge = (stage) => callAndroid('getTypingChallenge', stage);
+    api.check_typing_answer = (p, e, s) => callAndroid('checkTypingAnswer', p, e, s);
+    api.get_typing_game_progress = () => callAndroid('getTypingGameProgress');
     api.get_progress = () => callAndroid('getProgress');
     api.award_stars = (act, cnt) => callAndroid('awardStars', act, cnt);
     api.get_version = () => callAndroid('getVersion');
@@ -103,6 +107,7 @@
       'start_activity', 'stop_activity',
       'save_settings', 'load_settings',
       'get_random_letter_or_number', 'check_letter_number_answer',
+      'get_typing_challenge', 'check_typing_answer', 'get_typing_game_progress',
       'get_progress', 'award_stars',
       'get_version', 'get_system_info'
     ];

@@ -13,6 +13,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getRandomLetterOrNumber: () => ipcRenderer.invoke('get-random-letter-or-number'),
   checkLetterNumberAnswer: (pressedKey, expectedKey) => ipcRenderer.invoke('check-letter-number-answer', pressedKey, expectedKey),
 
+  // Typing Game
+  getTypingChallenge: (stage) => ipcRenderer.invoke('get-typing-challenge', stage),
+  checkTypingAnswer: (pressedKey, expectedKey, stage) => ipcRenderer.invoke('check-typing-answer', pressedKey, expectedKey, stage),
+  getTypingGameProgress: () => ipcRenderer.invoke('get-typing-game-progress'),
+
   // Progress/Gamification
   getProgress: () => ipcRenderer.invoke('get-progress'),
   awardStars: (activity, count) => ipcRenderer.invoke('award-stars', activity, count),

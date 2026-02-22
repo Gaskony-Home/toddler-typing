@@ -68,52 +68,59 @@
             <!-- 3x2 Grid -->
             <div class="activity-grid">
                 <!-- Letters & Numbers -->
-                <button class="activity-card" onclick="startActivity('letters_numbers')">
+                <button class="activity-card" data-activity="letters_numbers">
                     <i class="bi bi-alphabet card-icon"></i>
                     <h3 class="card-title">Letters & Numbers</h3>
                     <p class="card-subtitle">Learn ABC and 123</p>
                 </button>
 
                 <!-- Drawing -->
-                <button class="activity-card card-drawing" onclick="startActivity('drawing')">
+                <button class="activity-card card-drawing" data-activity="drawing">
                     <i class="bi bi-brush card-icon"></i>
                     <h3 class="card-title">Drawing</h3>
                     <p class="card-subtitle">Create beautiful art</p>
                 </button>
 
                 <!-- Colors & Shapes -->
-                <button class="activity-card card-shapes" onclick="startActivity('colors_shapes')">
+                <button class="activity-card card-shapes" data-activity="colors_shapes">
                     <i class="bi bi-triangle card-icon"></i>
                     <h3 class="card-title">Colors & Shapes</h3>
                     <p class="card-subtitle">Discover colors and shapes</p>
                 </button>
 
                 <!-- Dot to Dot -->
-                <button class="activity-card card-dot2dot" onclick="startActivity('dot2dot')">
+                <button class="activity-card card-dot2dot" data-activity="dot2dot">
                     <i class="bi bi-diagram-3 card-icon"></i>
                     <h3 class="card-title">Dot to Dot</h3>
                     <p class="card-subtitle">Connect the dots</p>
                 </button>
 
                 <!-- Sounds -->
-                <button class="activity-card card-sounds" onclick="startActivity('sounds')">
+                <button class="activity-card card-sounds" data-activity="sounds">
                     <i class="bi bi-megaphone card-icon"></i>
                     <h3 class="card-title">Sounds</h3>
                     <p class="card-subtitle">Learn letter sounds</p>
                 </button>
 
                 <!-- Coloring -->
-                <button class="activity-card card-coloring" onclick="startActivity('coloring')">
+                <button class="activity-card card-coloring" data-activity="coloring">
                     <i class="bi bi-palette card-icon"></i>
                     <h3 class="card-title">Coloring</h3>
                     <p class="card-subtitle">Paint and color pictures</p>
+                </button>
+
+                <!-- Typing Game -->
+                <button class="activity-card card-typing" data-activity="typing_game">
+                    <i class="bi bi-keyboard card-icon"></i>
+                    <h3 class="card-title">Typing Game</h3>
+                    <p class="card-subtitle">Practice typing skills</p>
                 </button>
             </div>
         </div>
 
         <!-- Activity Screens (hidden by default) -->
         <div id="activityScreen" class="activity-screen-wrapper">
-            <button class="btn-back" onclick="returnToMenu()">
+            <button class="btn-back" id="btnBack">
                 <i class="bi bi-arrow-left"></i> Back to Menu
             </button>
             <div id="activityContent">
@@ -155,7 +162,8 @@
     <script src="libs/three/GLTFLoader.js"></script>
     <!-- API Bridge (Electron / Android) -->
     <script src="js/api-bridge.js"></script>
-    <!-- Dinosaur Voice (Web Speech API TTS) -->
+    <!-- Dinosaur Voice Phrases & TTS -->
+    <script src="js/dino-phrases.js"></script>
     <script src="js/dino-voice.js"></script>
     <!-- Activity modules -->
     <script src="js/activities/letters_numbers.js"></script>
@@ -164,6 +172,7 @@
     <script src="js/activities/dot2dot.js"></script>
     <script src="js/activities/sounds.js"></script>
     <script src="js/activities/coloring.js"></script>
+    <script src="js/activities/typing_game.js"></script>
     <!-- Character Managers (3D primary, 2D fallback) -->
     <script src="js/character_manager.js"></script>
     <script src="js/character-setup.js"></script>

@@ -29,7 +29,8 @@ class SoundsActivity {
         this.setupNavigation();
 
         // Speak welcome message
-        AppAPI.call('speak', "Let's learn letter sounds!");
+        const welcomeText = window.DinoPhrase ? window.DinoPhrase('sounds', 'welcome') : "Let's learn letter sounds!";
+        AppAPI.call('speak', welcomeText);
 
         // Character wave
         if (window.characterManager) {

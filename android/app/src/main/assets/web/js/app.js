@@ -564,6 +564,12 @@ class ActivityManager {
                     await this.currentActivityInstance.start();
                 }
                 break;
+            case 'typing_game':
+                if (typeof TypingGameActivity !== 'undefined') {
+                    this.currentActivityInstance = new TypingGameActivity();
+                    await this.currentActivityInstance.start();
+                }
+                break;
             default:
                 console.log('No logic implemented for this activity yet');
         }
@@ -590,6 +596,9 @@ class ActivityManager {
                 break;
             case 'coloring':
                 content = this.getColoringContent();
+                break;
+            case 'typing_game':
+                content = this.getTypingGameContent();
                 break;
             default:
                 content = '<h2>Activity not found</h2>';
@@ -780,6 +789,97 @@ class ActivityManager {
             </div>
         `;
     }
+
+    getTypingGameContent() {
+        return `
+            <div class="activity-container typing-game-activity">
+                <!-- Progress Display -->
+                <div id="typingProgressDisplay" class="progress-display-top"></div>
+
+                <!-- Stage Tabs -->
+                <div class="stage-tabs">
+                    <button class="stage-tab active" data-stage="1">
+                        <i class="bi bi-alphabet"></i> Letters
+                    </button>
+                    <button class="stage-tab locked" data-stage="2">
+                        <i class="bi bi-123"></i> Numbers
+                        <span class="lock-overlay"><i class="bi bi-lock-fill"></i></span>
+                    </button>
+                    <button class="stage-tab locked" data-stage="3">
+                        <i class="bi bi-fonts"></i> Words
+                        <span class="lock-overlay"><i class="bi bi-lock-fill"></i></span>
+                    </button>
+                </div>
+
+                <!-- Instruction Text -->
+                <p id="typingInstruction" class="instruction-text">
+                    Press the key on the keyboard!
+                </p>
+
+                <!-- Target Display -->
+                <div id="typingTargetDisplay" class="typing-target-display is-letter">
+                    A
+                </div>
+
+                <!-- Streak Counter -->
+                <div id="streakDisplay" class="streak-display"></div>
+
+                <!-- On-Screen Keyboard -->
+                <div id="onscreenKeyboard" class="onscreen-keyboard">
+                    <div id="oskNumberRow" class="osk-row osk-number-row" style="display: none;">
+                        <button class="osk-key" data-key="1">1</button>
+                        <button class="osk-key" data-key="2">2</button>
+                        <button class="osk-key" data-key="3">3</button>
+                        <button class="osk-key" data-key="4">4</button>
+                        <button class="osk-key" data-key="5">5</button>
+                        <button class="osk-key" data-key="6">6</button>
+                        <button class="osk-key" data-key="7">7</button>
+                        <button class="osk-key" data-key="8">8</button>
+                        <button class="osk-key" data-key="9">9</button>
+                        <button class="osk-key" data-key="0">0</button>
+                    </div>
+                    <div class="osk-row">
+                        <button class="osk-key" data-key="Q">Q</button>
+                        <button class="osk-key" data-key="W">W</button>
+                        <button class="osk-key" data-key="E">E</button>
+                        <button class="osk-key" data-key="R">R</button>
+                        <button class="osk-key" data-key="T">T</button>
+                        <button class="osk-key" data-key="Y">Y</button>
+                        <button class="osk-key" data-key="U">U</button>
+                        <button class="osk-key" data-key="I">I</button>
+                        <button class="osk-key" data-key="O">O</button>
+                        <button class="osk-key" data-key="P">P</button>
+                    </div>
+                    <div class="osk-row osk-row-offset-1">
+                        <button class="osk-key" data-key="A">A</button>
+                        <button class="osk-key" data-key="S">S</button>
+                        <button class="osk-key" data-key="D">D</button>
+                        <button class="osk-key" data-key="F">F</button>
+                        <button class="osk-key" data-key="G">G</button>
+                        <button class="osk-key" data-key="H">H</button>
+                        <button class="osk-key" data-key="J">J</button>
+                        <button class="osk-key" data-key="K">K</button>
+                        <button class="osk-key" data-key="L">L</button>
+                    </div>
+                    <div class="osk-row osk-row-offset-2">
+                        <button class="osk-key" data-key="Z">Z</button>
+                        <button class="osk-key" data-key="X">X</button>
+                        <button class="osk-key" data-key="C">C</button>
+                        <button class="osk-key" data-key="V">V</button>
+                        <button class="osk-key" data-key="B">B</button>
+                        <button class="osk-key" data-key="N">N</button>
+                        <button class="osk-key" data-key="M">M</button>
+                    </div>
+                </div>
+
+                <!-- Star Animation Container -->
+                <div id="typingStarAnimation" class="star-animation-container"></div>
+
+                <!-- Level Up Notification -->
+                <div id="typingLevelUp" class="level-up-notification" style="display: none;"></div>
+            </div>
+        `;
+    }
 }
 
 // Global instances
@@ -807,6 +907,24 @@ window.returnToMenu = function() {
 };
 
 /**
+ * Wire up click handlers via addEventListener (CSP blocks inline onclick)
+ */
+function bindClickHandlers() {
+    // Activity cards
+    document.querySelectorAll('.activity-card[data-activity]').forEach(card => {
+        card.addEventListener('click', () => {
+            window.startActivity(card.dataset.activity);
+        });
+    });
+
+    // Back button
+    const backBtn = document.getElementById('btnBack');
+    if (backBtn) {
+        backBtn.addEventListener('click', () => window.returnToMenu());
+    }
+}
+
+/**
  * Initialize application
  */
 async function initApp() {
@@ -817,6 +935,9 @@ async function initApp() {
         window.DinoVoice.init();
         console.log('DinoVoice TTS initialized');
     }
+
+    // Bind click handlers (CSP blocks inline onclick attributes)
+    bindClickHandlers();
 
     // Initialize managers
     themeManager = new ThemeManager();
