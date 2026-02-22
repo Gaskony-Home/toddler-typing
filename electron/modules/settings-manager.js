@@ -1,16 +1,19 @@
 const { Conf } = require('electron-conf/main');
 
 const settingsSchema = {
-  theme: { type: 'string', default: 'dark', enum: ['light', 'dark'] },
-  fullscreen: { type: 'boolean', default: false },
-  voice_enabled: { type: 'boolean', default: true },
-  dino_voice_enabled: { type: 'boolean', default: true },
-  keyboard_lock_enabled: { type: 'boolean', default: true },
-  volume: { type: 'number', default: 1.0, minimum: 0, maximum: 1 },
-  exit_combination: {
-    type: 'array',
-    default: ['ctrl', 'shift', 'esc'],
-    items: { type: 'string' }
+  type: 'object',
+  properties: {
+    theme: { type: 'string', default: 'dark', enum: ['light', 'dark'] },
+    fullscreen: { type: 'boolean', default: false },
+    voice_enabled: { type: 'boolean', default: true },
+    dino_voice_enabled: { type: 'boolean', default: true },
+    keyboard_lock_enabled: { type: 'boolean', default: true },
+    volume: { type: 'number', default: 1.0, minimum: 0, maximum: 1 },
+    exit_combination: {
+      type: 'array',
+      default: ['ctrl', 'shift', 'esc'],
+      items: { type: 'string' }
+    }
   }
 };
 
