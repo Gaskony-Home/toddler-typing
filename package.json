@@ -7,7 +7,9 @@
   "scripts": {
     "start": "electron .",
     "package": "electron-forge package",
-    "make": "electron-forge make"
+    "make": "electron-forge make",
+    "sync-android": "node scripts/sync-android.js",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "author": "Toddler Typing Project",
   "license": "MIT",

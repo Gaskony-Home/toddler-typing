@@ -259,8 +259,8 @@ class VoiceToAnimationBridge {
         this.isSpeaking = false;
         this.speechTimeout = null;
 
-        // Override pywebview.api.speak to monitor when voice starts/stops
-        if (typeof pywebview !== 'undefined' && pywebview.api) {
+        // Override appBridge.speak to monitor when voice starts/stops
+        if (window.appBridge && window.appBridge.speak) {
             this.interceptVoiceCalls();
         }
     }
@@ -269,23 +269,18 @@ class VoiceToAnimationBridge {
      * Intercept voice API calls to sync with character
      */
     interceptVoiceCalls() {
-        // Store original speak function
-        const originalSpeak = pywebview.api.speak;
+        const originalSpeak = window.appBridge.speak;
         const self = this;
 
-        // Wrap the speak function
-        pywebview.api.speak = async function(text, interrupt = false) {
-            // Start talking animation
+        window.appBridge.speak = async function(text, interrupt = false) {
             self.onSpeechStart(text);
 
-            // Call original function
-            const result = await originalSpeak.call(pywebview.api, text, interrupt);
+            const result = await originalSpeak.call(window.appBridge, text, interrupt);
 
             // Estimate speech duration (rough approximation)
             const words = text.split(' ').length;
             const estimatedDuration = words * 500; // ~500ms per word
 
-            // Stop talking after estimated duration
             self.scheduleSpeechEnd(estimatedDuration);
 
             return result;
@@ -308,12 +303,10 @@ class VoiceToAnimationBridge {
      * Schedule speech end
      */
     scheduleSpeechEnd(duration) {
-        // Clear any existing timeout
         if (this.speechTimeout) {
             clearTimeout(this.speechTimeout);
         }
 
-        // Schedule stop
         this.speechTimeout = setTimeout(() => {
             this.onSpeechEnd();
         }, duration);
@@ -332,7 +325,16 @@ class VoiceToAnimationBridge {
     }
 }
 
-// Use 2D character manager as default
-window.CharacterManager = CharacterManager2D;
+// Set up fallback logic
+window.CharacterManager2D = CharacterManager2D;
+console.log('2D CharacterManager loaded');
+
+// Restore 3D as default if available, otherwise use 2D
+if (typeof window.CharacterManager3D !== 'undefined') {
+    window.CharacterManager = window.CharacterManager3D;
+} else {
+    window.CharacterManager = CharacterManager2D;
+}
+
 window.characterManager = null;
 window.voiceToAnimationBridge = null;

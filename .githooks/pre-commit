@@ -1,0 +1,15 @@
+#!/bin/sh
+# Auto-sync shared web files to Android assets when desktop sources change.
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
+
+# Check if any synced source files were modified
+NEEDS_SYNC=$(echo "$STAGED" | grep -E '^src/toddler_typing/web/(js|css|assets)/')
+
+if [ -n "$NEEDS_SYNC" ]; then
+    echo "Syncing web files to Android assets..."
+    node scripts/sync-android.js
+    git add android/app/src/main/assets/web/js/ \
+            android/app/src/main/assets/web/css/ \
+            android/app/src/main/assets/web/assets/
+fi

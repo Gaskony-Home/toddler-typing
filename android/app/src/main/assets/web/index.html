@@ -101,7 +101,7 @@
 
     <!-- Footer -->
     <footer class="page-footer">
-        <small id="versionLabel">v1.1.4</small>
+        <small id="versionLabel">v...</small>
     </footer>
 
     <!-- Bootstrap 5.3 JS Bundle -->
@@ -109,6 +109,10 @@
     <!-- Three.js for 3D rendering -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
+    <!-- API Bridge (Electron / Android) -->
+    <script src="js/api-bridge.js"></script>
+    <!-- Dinosaur Voice (Web Speech API TTS) -->
+    <script src="js/dino-voice.js"></script>
     <!-- Activity modules -->
     <script src="js/activities/letters_numbers.js"></script>
     <script src="js/activities/drawing.js"></script>
@@ -118,25 +122,8 @@
     <script src="js/activities/coloring.js"></script>
     <!-- Character Managers (3D primary, 2D fallback) -->
     <script src="js/character_manager.js"></script>
-    <script>
-        // Rename CharacterManager to avoid conflicts
-        if (typeof CharacterManager !== 'undefined') {
-            window.CharacterManager3D = CharacterManager;
-            console.log('3D CharacterManager loaded');
-        }
-    </script>
+    <script src="js/character-setup.js"></script>
     <script src="js/character_manager_2d.js"></script>
-    <script>
-        // Set up fallback logic
-        if (typeof CharacterManager !== 'undefined') {
-            window.CharacterManager2D = CharacterManager;
-            console.log('2D CharacterManager loaded');
-        }
-        // Restore 3D as default if available
-        if (typeof CharacterManager3D !== 'undefined') {
-            CharacterManager = CharacterManager3D;
-        }
-    </script>
     <!-- Custom JS -->
     <script src="js/app.js"></script>
 </body>

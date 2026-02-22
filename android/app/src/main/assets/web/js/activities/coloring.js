@@ -21,6 +21,7 @@ class ColoringActivity {
         this.lastX = 0;
         this.lastY = 0;
         this.backgroundImage = null;
+        this._resizeHandler = () => this.resizeCanvas();
     }
 
     async start() {
@@ -37,7 +38,7 @@ class ColoringActivity {
 
         // Set canvas size to be responsive
         this.resizeCanvas();
-        window.addEventListener('resize', () => this.resizeCanvas());
+        window.addEventListener('resize', this._resizeHandler);
 
         // Load first image
         await this.loadImage();
@@ -49,9 +50,7 @@ class ColoringActivity {
         this.setupDrawingEvents();
 
         // Speak welcome message
-        if (typeof PythonAPI !== 'undefined' && PythonAPI.call) {
-            PythonAPI.call('speak', 'Choose your colors and start coloring!');
-        }
+        AppAPI.call('speak', 'Choose your colors and start coloring!');
 
         // Character wave
         if (window.characterManager) {
@@ -66,7 +65,7 @@ class ColoringActivity {
         // Maximize canvas size to fill available space
         const container = this.canvas.parentElement;
         const maxWidth = Math.min(container.clientWidth - 20, window.innerWidth - 40);
-        const maxHeight = window.innerHeight - 320; // Leave space for controls, title, and margins
+        const maxHeight = window.innerHeight - 320;
 
         this.canvas.width = maxWidth;
         this.canvas.height = maxHeight;
@@ -93,11 +92,12 @@ class ColoringActivity {
         }
 
         // Load image
-        return new Promise((resolve, reject) => {
+        await new Promise((resolve, reject) => {
             const img = new Image();
             img.onload = () => {
                 this.backgroundImage = img;
                 this.drawBackgroundImage();
+                this.updateCounter();
                 resolve();
             };
             img.onerror = () => {
@@ -106,8 +106,6 @@ class ColoringActivity {
             };
             img.src = imagePath;
         });
-
-        this.updateCounter();
     }
 
     drawBackgroundImage() {
@@ -126,7 +124,6 @@ class ColoringActivity {
         const x = (this.canvas.width - this.backgroundImage.width * scale) / 2;
         const y = (this.canvas.height - this.backgroundImage.height * scale) / 2;
 
-        // Draw the background image
         this.ctx.drawImage(
             this.backgroundImage,
             x, y,
@@ -139,11 +136,8 @@ class ColoringActivity {
         const colorButtons = document.querySelectorAll('.color-btn');
         colorButtons.forEach(btn => {
             btn.addEventListener('click', () => {
-                // Remove active class from all buttons
                 colorButtons.forEach(b => b.classList.remove('active'));
-                // Add active class to clicked button
                 btn.classList.add('active');
-                // Set current color
                 this.currentColor = btn.dataset.color;
             });
         });
@@ -153,11 +147,8 @@ class ColoringActivity {
         const sizeButtons = document.querySelectorAll('.brush-size-btn');
         sizeButtons.forEach(btn => {
             btn.addEventListener('click', () => {
-                // Remove active class from all buttons
                 sizeButtons.forEach(b => b.classList.remove('active'));
-                // Add active class to clicked button
                 btn.classList.add('active');
-                // Set current brush size
                 this.currentBrushSize = parseInt(btn.dataset.size);
             });
         });
@@ -225,7 +216,6 @@ class ColoringActivity {
     }
 
     clearDrawing() {
-        // Redraw just the background image (removes all drawing)
         this.drawBackgroundImage();
 
         if (window.characterManager) {
@@ -236,30 +226,24 @@ class ColoringActivity {
     saveDrawing() {
         if (!this.canvas) return;
 
-        // Convert canvas to data URL (PNG format)
         const dataURL = this.canvas.toDataURL('image/png');
 
-        // Create a temporary link element
         const link = document.createElement('a');
         const imageName = this.images[this.currentIndex];
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
         link.download = `coloring-${imageName}-${timestamp}.png`;
         link.href = dataURL;
 
-        // Trigger download
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
 
         console.log('Coloring page saved successfully');
 
-        // Give feedback
         if (window.characterManager) {
             window.characterManager.playAnimation('happy', false);
         }
-        if (typeof PythonAPI !== 'undefined' && PythonAPI.call) {
-            PythonAPI.call('speak', 'Picture saved!');
-        }
+        AppAPI.call('speak', 'Picture saved!');
     }
 
     updateButtons() {
@@ -352,10 +336,9 @@ class ColoringActivity {
 
     stop() {
         console.log('Stopping Coloring activity');
-        // Remove event listeners
         if (this.keyPressHandler) {
             document.removeEventListener('keydown', this.keyPressHandler);
         }
-        window.removeEventListener('resize', () => this.resizeCanvas());
+        window.removeEventListener('resize', this._resizeHandler);
     }
 }

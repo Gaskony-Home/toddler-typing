@@ -22,7 +22,7 @@ class LettersNumbersActivity {
         this.isActive = true;
 
         // Get initial progress
-        const progressData = await PythonAPI.call('get_progress');
+        const progressData = await AppAPI.call('get_progress');
         if (progressData && progressData.success && progressData.progress) {
             this.totalStars = progressData.progress.total_stars || 0;
             this.currentLevel = progressData.progress.current_level || 1;
@@ -64,7 +64,7 @@ class LettersNumbersActivity {
      */
     async nextCharacter() {
         try {
-            const result = await PythonAPI.call('get_random_letter_or_number');
+            const result = await AppAPI.call('get_random_letter_or_number');
 
             if (result && result.success) {
                 this.currentCharacter = result.character;
@@ -98,8 +98,7 @@ class LettersNumbersActivity {
 
         console.log(`Key pressed: ${pressedKey}, Expected: ${this.currentCharacter}`);
 
-        // Check answer via Python API
-        const result = await PythonAPI.call('check_letter_number_answer', pressedKey, this.currentCharacter);
+        const result = await AppAPI.call('check_letter_number_answer', pressedKey, this.currentCharacter);
 
         if (result && result.success && result.correct) {
             // Correct answer!
