@@ -1,6 +1,6 @@
 {
   "name": "toddler-typing",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "A child-friendly educational app for learning letters, numbers, colors, and shapes",
   "main": "electron/main.js",
   "repository": "github:Gaskony-Home/toddler-typing",
@@ -11,6 +11,7 @@
     "dist:linux": "electron-builder --linux --x64",
     "dist:mac": "electron-builder --mac",
     "sync-android": "node scripts/sync-android.js",
+    "setup:tts": "node scripts/download-tts-model.js",
     "prepare": "git config core.hooksPath .githooks",
     "postinstall": "electron-builder install-app-deps"
   },
@@ -30,6 +31,7 @@
   "dependencies": {
     "electron-conf": "^1.3.0",
     "electron-squirrel-startup": "^1.0.1",
-    "electron-updater": "^6.8.0"
+    "electron-updater": "^6.8.0",
+    "sherpa-onnx-node": "^1.12.25"
   }
 }

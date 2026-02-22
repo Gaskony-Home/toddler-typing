@@ -29,5 +29,8 @@ android/.idea/
 *.aab
 *.keystore
 
+# TTS model files (downloaded via npm run setup:tts)
+resources/tts-model/
+
 # Claude Code
 .claude/
