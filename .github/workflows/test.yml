@@ -29,5 +29,5 @@ jobs:
         npm run sync-android
         git diff --exit-code android/
 
-    - name: Package app
-      run: npx electron-forge package
+    - name: Build app
+      run: npx electron-builder --dir

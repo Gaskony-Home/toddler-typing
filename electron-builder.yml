@@ -1,0 +1,70 @@
+appId: com.toddler-typing.app
+productName: Toddler Typing
+copyright: Copyright © 2026 Toddler Typing Project
+
+directories:
+  output: release
+
+files:
+  - electron/**/*
+  - src/**/*
+  - package.json
+
+asar: true
+
+# Windows configuration
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: src/toddler_typing/web/assets/dino_character.png
+  artifactName: ${productName}-Setup-${version}.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: true
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Toddler Typing
+  uninstallDisplayName: Toddler Typing
+  installerIcon: src/toddler_typing/web/assets/dino_character.png
+  uninstallerIcon: src/toddler_typing/web/assets/dino_character.png
+
+# macOS configuration
+mac:
+  target:
+    - target: dmg
+  icon: src/toddler_typing/web/assets/dino_character.png
+  category: public.app-category.education
+  identity: null
+  artifactName: ${productName}-${version}-${arch}.${ext}
+
+dmg:
+  sign: false
+
+# Linux configuration
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+  icon: src/toddler_typing/web/assets/dino_character.png
+  category: Education
+  artifactName: ${productName}-${version}-${arch}.${ext}
+
+# Auto-update configuration
+publish:
+  provider: github
+  owner: Gaskony-Home
+  repo: toddler-typing
+  releaseType: release
+
+# Compression
+compression: maximum
+
+# Remove unused locales to reduce size
+electronLanguages:
+  - en-US
