@@ -279,6 +279,7 @@ class MuteManager {
  */
 class UpdateManager {
     constructor() {
+        this.checkUpdateBtn = document.getElementById('checkUpdateBtn');
         this.updateBtn = document.getElementById('updateBtn');
         this.updateNowBtn = document.getElementById('updateNowBtn');
         this.updateModalMessage = document.getElementById('updateModalMessage');
@@ -302,11 +303,23 @@ class UpdateManager {
             });
         }
 
+        // Listen for update-not-available
+        if (window.electronAPI && window.electronAPI.onUpdateNotAvailable) {
+            window.electronAPI.onUpdateNotAvailable(() => {
+                this.onUpdateNotAvailable();
+            });
+        }
+
         // Listen for update-downloaded
         if (window.electronAPI && window.electronAPI.onUpdateDownloaded) {
             window.electronAPI.onUpdateDownloaded(() => {
                 this.onUpdateDownloaded();
             });
+        }
+
+        // Check for Updates button click
+        if (this.checkUpdateBtn) {
+            this.checkUpdateBtn.addEventListener('click', () => this.manualCheckForUpdates());
         }
 
         // Update button click -> show modal
@@ -320,11 +333,29 @@ class UpdateManager {
         }
     }
 
+    async manualCheckForUpdates() {
+        if (!this.checkUpdateBtn) return;
+
+        // Show checking state
+        this.checkUpdateBtn.classList.add('checking');
+        this.checkUpdateBtn.title = 'Checking...';
+
+        if (window.electronAPI && window.electronAPI.checkForUpdates) {
+            await window.electronAPI.checkForUpdates();
+        }
+    }
+
     onUpdateAvailable(info) {
         this.updateInfo = info;
         console.log('Update available:', info.version);
 
-        // Show the update button
+        // Reset check button
+        if (this.checkUpdateBtn) {
+            this.checkUpdateBtn.classList.remove('checking');
+            this.checkUpdateBtn.style.display = 'none';
+        }
+
+        // Show the download update button
         if (this.updateBtn) {
             this.updateBtn.style.display = 'flex';
         }
@@ -332,6 +363,22 @@ class UpdateManager {
         // Update modal message
         if (this.updateModalMessage) {
             this.updateModalMessage.textContent = `Version ${info.version} is available. Download and restart to install?`;
+        }
+    }
+
+    onUpdateNotAvailable() {
+        console.log('App is up to date');
+
+        if (this.checkUpdateBtn) {
+            this.checkUpdateBtn.classList.remove('checking');
+            this.checkUpdateBtn.classList.add('up-to-date');
+            this.checkUpdateBtn.title = 'Up to date!';
+
+            // Reset after 3 seconds
+            setTimeout(() => {
+                this.checkUpdateBtn.classList.remove('up-to-date');
+                this.checkUpdateBtn.title = 'Check for Updates';
+            }, 3000);
         }
     }
 

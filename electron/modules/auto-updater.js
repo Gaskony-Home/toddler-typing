@@ -24,6 +24,13 @@ class AutoUpdater {
       }
     });
 
+    autoUpdater.on('update-not-available', () => {
+      console.log('App is up to date');
+      if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+        this.mainWindow.webContents.send('update-not-available');
+      }
+    });
+
     autoUpdater.on('error', (err) => {
       console.error('Auto-updater error:', err.message);
     });
