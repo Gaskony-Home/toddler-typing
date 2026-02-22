@@ -1,9 +1,0 @@
-# Core dependencies - exact versions for security and reproducibility
-# Last updated: 2025-11-11 - Migrated to PyWebView for modern web UI
-pywebview==5.3
-pythonnet==3.0.4
-pynput==1.8.1
-
-# For flexible updates during development, use requirements-dev.txt
-# For production builds, these exact versions are recommended
-pyttsx3==2.99
