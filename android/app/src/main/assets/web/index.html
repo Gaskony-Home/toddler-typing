@@ -85,6 +85,13 @@
                     <h3 class="card-title">Coloring</h3>
                     <p class="card-subtitle">Paint and color pictures</p>
                 </button>
+
+                <!-- Typing Game -->
+                <button class="activity-card card-typing" onclick="startActivity('typing_game')">
+                    <i class="bi bi-keyboard card-icon"></i>
+                    <h3 class="card-title">Typing Game</h3>
+                    <p class="card-subtitle">Practice typing skills</p>
+                </button>
             </div>
         </div>
 
@@ -111,7 +118,8 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
     <!-- API Bridge (Electron / Android) -->
     <script src="js/api-bridge.js"></script>
-    <!-- Dinosaur Voice (Web Speech API TTS) -->
+    <!-- Dinosaur Voice Phrases & TTS -->
+    <script src="js/dino-phrases.js"></script>
     <script src="js/dino-voice.js"></script>
     <!-- Activity modules -->
     <script src="js/activities/letters_numbers.js"></script>
@@ -120,6 +128,7 @@
     <script src="js/activities/dot2dot.js"></script>
     <script src="js/activities/sounds.js"></script>
     <script src="js/activities/coloring.js"></script>
+    <script src="js/activities/typing_game.js"></script>
     <!-- Character Managers (3D primary, 2D fallback) -->
     <script src="js/character_manager.js"></script>
     <script src="js/character-setup.js"></script>

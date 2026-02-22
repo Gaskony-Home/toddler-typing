@@ -21,7 +21,7 @@
 
   // Configuration for the "dinosaur" voice
   const DINO_PITCH = 0.6;   // Lower pitch for deep voice (0.0 - 2.0)
-  const DINO_RATE = 0.85;    // Slightly slower for friendliness (0.1 - 10.0)
+  const DINO_RATE = 0.72;   // Slow drawl for personality (0.1 - 10.0)
   const DINO_VOLUME = 1.0;
 
   let selectedVoice = null;
@@ -76,6 +76,18 @@
   }
 
   /**
+   * Preprocess text for better drawl effect.
+   * Converts ".." to pauses and adds slight pauses after "!"
+   */
+  function preprocessText(text) {
+    // Convert double dots to comma pauses for speech synthesis
+    let processed = text.replace(/\.\./g, ', ,');
+    // Add a slight pause after exclamation marks
+    processed = processed.replace(/!/g, '! ,');
+    return processed;
+  }
+
+  /**
    * Speak text with dinosaur voice effect.
    * @param {string} text - Text to speak
    * @param {boolean} [interrupt=false] - Cancel current speech first
@@ -91,7 +103,7 @@
       synth.cancel();
     }
 
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(preprocessText(text));
     utterance.pitch = DINO_PITCH;
     utterance.rate = DINO_RATE;
     utterance.volume = DINO_VOLUME;
@@ -133,6 +145,19 @@
   // Auto-init
   init();
 
+  /**
+   * Convenience: pick a random DinoPhrases phrase and speak it.
+   * @param {string} category
+   * @param {string} [subcategory]
+   * @param {Object} [replacements]
+   * @param {boolean} [interrupt=false]
+   */
+  function speakPhrase(category, subcategory, replacements, interrupt = false) {
+    if (typeof window.DinoPhrase !== 'function') return;
+    const text = window.DinoPhrase(category, subcategory, replacements);
+    if (text) speak(text, interrupt);
+  }
+
   // Expose globally
-  window.DinoVoice = { speak, stop, init };
+  window.DinoVoice = { speak, stop, init, speakPhrase };
 })();

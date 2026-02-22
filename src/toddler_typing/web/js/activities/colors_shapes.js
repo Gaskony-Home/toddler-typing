@@ -110,12 +110,23 @@ class ColorsShapesActivity {
 
     async speakInstruction() {
         const target = this.options[this.targetIndex];
-        const text = `Click the ${target.color.name} ${target.shape.name}`;
+
+        // Use DinoPhrases for instruction
+        let text;
+        if (window.DinoPhrase) {
+            text = window.DinoPhrase('colors_shapes', 'instruction', {
+                color: target.color.name,
+                shape: target.shape.name
+            });
+        }
+        if (!text) {
+            text = `Click the ${target.color.name} ${target.shape.name}`;
+        }
 
         // Update instruction text
         const instructionEl = document.getElementById('shapeInstruction');
         if (instructionEl) {
-            instructionEl.textContent = text;
+            instructionEl.textContent = `Click the ${target.color.name} ${target.shape.name}`;
         }
 
         await AppAPI.call('speak', text);
@@ -137,7 +148,8 @@ class ColorsShapesActivity {
             }
 
             // Play success sound/animation
-            await AppAPI.call('speak', 'Great job!');
+            const correctText = window.DinoPhrase ? window.DinoPhrase('colors_shapes', 'correct') : 'Great job!';
+            await AppAPI.call('speak', correctText);
 
             // Wait a bit, then next round
             setTimeout(() => {
@@ -155,7 +167,8 @@ class ColorsShapesActivity {
             }
 
             // Play error sound
-            await AppAPI.call('speak', 'Try again!');
+            const wrongText = window.DinoPhrase ? window.DinoPhrase('colors_shapes', 'wrong') : 'Try again!';
+            await AppAPI.call('speak', wrongText);
 
             // Remove wrong class after animation
             setTimeout(() => {

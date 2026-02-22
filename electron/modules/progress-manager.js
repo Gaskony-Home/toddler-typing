@@ -21,7 +21,8 @@ const progressSchema = {
         colors_shapes: 0,
         coloring: 0,
         dot2dot: 0,
-        sounds: 0
+        sounds: 0,
+        typing_game: 0
       }
     },
     last_updated: { type: 'string', default: '' }
@@ -41,7 +42,7 @@ class ProgressManager {
     this.starsByActivity = this.store.get('stars_by_activity');
 
     // Ensure all activity keys exist
-    const defaultActivities = ['letters_numbers', 'drawing', 'colors_shapes', 'coloring', 'dot2dot', 'sounds'];
+    const defaultActivities = ['letters_numbers', 'drawing', 'colors_shapes', 'coloring', 'dot2dot', 'sounds', 'typing_game'];
     for (const activity of defaultActivities) {
       if (!(activity in this.starsByActivity)) {
         this.starsByActivity[activity] = 0;

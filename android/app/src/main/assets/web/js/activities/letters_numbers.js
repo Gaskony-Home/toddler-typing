@@ -72,6 +72,12 @@ class LettersNumbersActivity {
 
                 // Update display
                 this.updateDisplay();
+
+                // Speak instruction via DinoPhrases
+                if (window.DinoVoice && window.DinoVoice.speakPhrase) {
+                    const sub = this.currentType === 'letter' ? 'instruction_letter' : 'instruction_number';
+                    window.DinoVoice.speakPhrase('letters_numbers', sub, { target: this.currentCharacter }, true);
+                }
             } else {
                 console.error('Failed to get random character');
             }
@@ -112,16 +118,22 @@ class LettersNumbersActivity {
     async handleCorrectAnswer(result) {
         console.log('Correct answer!', result);
 
+        // Speak encouragement via DinoPhrases
+        if (window.DinoVoice && window.DinoVoice.speakPhrase) {
+            if (result.level_up) {
+                window.DinoVoice.speakPhrase('level_up');
+            } else {
+                window.DinoVoice.speakPhrase('correct_first_try');
+            }
+        }
+
         // Trigger character celebration
         if (window.characterManager) {
             if (result.level_up) {
-                // Major celebration for level up
                 window.characterManager.playAnimation('dance', false);
             } else if (result.star_awarded) {
-                // Happy celebration for star
                 window.characterManager.playAnimation('happy', false);
             } else {
-                // Clap for correct answer
                 window.characterManager.playAnimation('clap', false);
             }
         }

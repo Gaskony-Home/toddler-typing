@@ -4,7 +4,7 @@ const { SettingsManager } = require('./modules/settings-manager');
 
 // Security constants
 const MAX_KEY_LENGTH = 10;
-const VALID_ACTIVITIES = new Set(['letters_numbers', 'drawing', 'colors_shapes', 'coloring', 'dot2dot', 'sounds']);
+const VALID_ACTIVITIES = new Set(['letters_numbers', 'drawing', 'colors_shapes', 'coloring', 'dot2dot', 'sounds', 'typing_game']);
 const VALID_THEMES = new Set(['light', 'dark']);
 const ALPHANUMERIC_RE = /^[a-zA-Z0-9]+$/;
 
@@ -161,6 +161,84 @@ function registerIpcHandlers(kbLocker) {
     }
 
     return result;
+  });
+
+  // === Typing Game ===
+
+  const TYPING_WORDS = [
+    'CAT','DOG','SUN','HAT','CUP','BIG','RUN','FUN','RED','BED',
+    'MOP','TOP','HOP','PIG','BAT','BUS','MUD','HUG','BUG','JAM',
+    'PAN','VAN','MAP'
+  ];
+
+  ipcMain.handle('get-typing-challenge', (_event, stage) => {
+    if (typeof stage !== 'number' || stage < 1 || stage > 3) {
+      stage = 1;
+    }
+
+    let target, type;
+
+    if (stage === 1) {
+      // Letters only
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      target = letters[Math.floor(Math.random() * letters.length)];
+      type = 'letter';
+    } else if (stage === 2) {
+      // Letters and numbers
+      const isLetter = Math.random() < 0.5;
+      if (isLetter) {
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        target = letters[Math.floor(Math.random() * letters.length)];
+        type = 'letter';
+      } else {
+        target = String(Math.floor(Math.random() * 10));
+        type = 'number';
+      }
+    } else {
+      // Words
+      target = TYPING_WORDS[Math.floor(Math.random() * TYPING_WORDS.length)];
+      type = 'word';
+    }
+
+    return { success: true, target, type, stage };
+  });
+
+  ipcMain.handle('check-typing-answer', (_event, pressedKey, expectedKey) => {
+    for (const key of [pressedKey, expectedKey]) {
+      if (!validateString(key, MAX_KEY_LENGTH)) {
+        return { success: false, error: 'Invalid key input' };
+      }
+    }
+
+    const pressed = pressedKey.toUpperCase().trim();
+    const expected = expectedKey.toUpperCase().trim();
+    const isCorrect = pressed === expected;
+
+    const result = { success: true, correct: isCorrect };
+
+    if (isCorrect) {
+      const { starAwarded, levelUp } = progressManager.awardStar('typing_game');
+      if (starAwarded) {
+        result.star_awarded = true;
+        result.total_stars = progressManager.totalStars;
+        result.level = progressManager.currentLevel;
+        result.level_up = levelUp;
+      }
+    }
+
+    return result;
+  });
+
+  ipcMain.handle('get-typing-game-progress', () => {
+    const activityStars = progressManager.starsByActivity.typing_game || 0;
+    return {
+      success: true,
+      activity_stars: activityStars,
+      total_stars: progressManager.totalStars,
+      current_level: progressManager.currentLevel,
+      stage2_unlocked: activityStars >= 20,
+      stage3_unlocked: activityStars >= 50
+    };
   });
 
   // === Progress/Gamification ===
