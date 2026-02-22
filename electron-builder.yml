@@ -18,7 +18,7 @@ win:
     - target: nsis
       arch:
         - x64
-  icon: src/toddler_typing/web/assets/dino_character.png
+  icon: src/toddler_typing/web/assets/dino_character.ico
   artifactName: ${productName}-Setup-${version}.${ext}
 
 nsis:
@@ -30,8 +30,8 @@ nsis:
   createStartMenuShortcut: true
   shortcutName: Toddler Typing
   uninstallDisplayName: Toddler Typing
-  installerIcon: src/toddler_typing/web/assets/dino_character.png
-  uninstallerIcon: src/toddler_typing/web/assets/dino_character.png
+  installerIcon: src/toddler_typing/web/assets/dino_character.ico
+  uninstallerIcon: src/toddler_typing/web/assets/dino_character.ico
 
 # macOS configuration
 mac:
