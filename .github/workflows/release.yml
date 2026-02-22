@@ -15,10 +15,13 @@ jobs:
         include:
           - os: windows-latest
             name: windows
+            cmd: npm run dist:win
           - os: ubuntu-latest
             name: linux
+            cmd: npm run dist:linux
           - os: macos-latest
             name: macos
+            cmd: npm run dist:mac
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -32,13 +35,13 @@ jobs:
         run: npm ci
 
       - name: Build installers
-        run: npx electron-forge make
+        run: ${{ matrix.cmd }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: desktop-${{ matrix.name }}
-          path: out/make/**/*
+          path: release/*
 
   android:
     runs-on: ubuntu-latest
@@ -94,7 +97,7 @@ jobs:
         shell: bash
         run: |
           shopt -s globstar nullglob
-          files=( artifacts/**/*.exe artifacts/**/*.zip artifacts/**/*.nupkg artifacts/**/*.apk artifacts/**/RELEASES )
+          files=( artifacts/**/*.exe artifacts/**/*.zip artifacts/**/*.dmg artifacts/**/*.AppImage artifacts/**/*.apk artifacts/**/*.blockmap artifacts/**/latest*.yml )
           if [ ${#files[@]} -eq 0 ]; then
             echo "No release files found!"
             exit 1
