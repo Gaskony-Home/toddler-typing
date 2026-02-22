@@ -52,9 +52,6 @@ class CharacterManager {
             // Start animation loop
             this.animate();
 
-            // Make character clickable
-            this.setupInteractivity();
-
             // Set up auto-repositioning
             this.setupAutoRepositioning();
 
@@ -70,44 +67,8 @@ class CharacterManager {
         } catch (error) {
             console.error('[CharacterManager] Failed to initialize:', error);
             this.container.classList.remove('loading');
-            this.showFallback();
-            return false;
-        }
-    }
-
-    /**
-     * Setup click interactivity for character
-     */
-    setupInteractivity() {
-        this.container.style.cursor = 'pointer';
-        this.container.addEventListener('click', () => this.onCharacterClick());
-    }
-
-    /**
-     * Handle character click - play random interaction
-     */
-    onCharacterClick() {
-        console.log('[CharacterManager] Character clicked!');
-
-        // Random interactions
-        const interactions = [
-            { animation: 'wave', message: 'Hi there! Having fun?' },
-            { animation: 'happy', message: 'You\'re doing great!' },
-            { animation: 'dance', message: 'Let\'s dance!' },
-            { animation: 'clap', message: 'Yay! Keep going!' },
-            { animation: 'thinking', message: 'Hmm, what should we do next?' }
-        ];
-
-        const interaction = interactions[Math.floor(Math.random() * interactions.length)];
-
-        // Play animation
-        this.playAnimation(interaction.animation, false);
-
-        // Speak message if not muted
-        if (typeof PythonAPI !== 'undefined' && PythonAPI.call) {
-            if (!AppState.isMuted) {
-                PythonAPI.call('speak', interaction.message);
-            }
+            // Fallback handled by CharacterManager2D.showFallback() via app.js
+            throw error;
         }
     }
 
@@ -328,9 +289,6 @@ class CharacterManager {
 
     /**
      * Play a specific animation by name
-     * @param {string} animationName - Name of the animation to play
-     * @param {boolean} loop - Whether to loop the animation (default: varies by animation)
-     * @param {number} fadeTime - Fade transition time in seconds (default: 0.3)
      */
     playAnimation(animationName, loop = null, fadeTime = 0.3) {
         if (!this.mixer || !this.animations[animationName]) {
@@ -353,7 +311,6 @@ class CharacterManager {
         if (loop !== null) {
             action.setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce);
         } else {
-            // Default loop behavior per animation type
             const loopingAnimations = ['idle', 'talk', 'walk'];
             const shouldLoop = loopingAnimations.includes(animationName);
             action.setLoop(shouldLoop ? THREE.LoopRepeat : THREE.LoopOnce);
@@ -381,12 +338,11 @@ class CharacterManager {
 
     /**
      * Set the character's emotional state (triggers corresponding animation)
-     * @param {string} emotion - Emotion name (happy, excited, curious, thinking, etc.)
      */
     setEmotion(emotion) {
         const emotionMap = {
             'happy': 'happy',
-            'excited': 'happy', // Use happy for excited if no separate animation
+            'excited': 'happy',
             'celebrate': 'celebrate',
             'dance': 'dance',
             'curious': 'thinking',
@@ -438,38 +394,6 @@ class CharacterManager {
     }
 
     /**
-     * Show fallback (emoji or 2D image) if WebGL fails
-     */
-    showFallback() {
-        this.container.innerHTML = `
-            <div style="
-                width: 100%;
-                height: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 8rem;
-                animation: bounce 2s ease-in-out infinite;
-            ">
-                🦕
-            </div>
-        `;
-
-        // Add bounce animation if not exists
-        if (!document.getElementById('fallback-animation')) {
-            const style = document.createElement('style');
-            style.id = 'fallback-animation';
-            style.textContent = `
-                @keyframes bounce {
-                    0%, 100% { transform: translateY(0); }
-                    50% { transform: translateY(-20px); }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-    }
-
-    /**
      * Clean up resources
      */
     destroy() {
@@ -505,88 +429,6 @@ class CharacterManager {
         this.container.innerHTML = '';
 
         console.log('[CharacterManager] Destroyed');
-    }
-}
-
-/**
- * VoiceToAnimationBridge - Monitors voice output and syncs character animations
- */
-class VoiceToAnimationBridge {
-    constructor(characterManager) {
-        this.characterManager = characterManager;
-        this.isSpeaking = false;
-        this.speechTimeout = null;
-
-        // Override pywebview.api.speak to monitor when voice starts/stops
-        if (typeof pywebview !== 'undefined' && pywebview.api) {
-            this.interceptVoiceCalls();
-        }
-    }
-
-    /**
-     * Intercept voice API calls to sync with character
-     */
-    interceptVoiceCalls() {
-        // Store original speak function
-        const originalSpeak = pywebview.api.speak;
-        const self = this;
-
-        // Wrap the speak function
-        pywebview.api.speak = async function(text, interrupt = false) {
-            // Start talking animation
-            self.onSpeechStart(text);
-
-            // Call original function
-            const result = await originalSpeak.call(pywebview.api, text, interrupt);
-
-            // Estimate speech duration (rough approximation)
-            const words = text.split(' ').length;
-            const estimatedDuration = words * 500; // ~500ms per word
-
-            // Stop talking after estimated duration
-            self.scheduleSpeechEnd(estimatedDuration);
-
-            return result;
-        };
-    }
-
-    /**
-     * Called when speech starts
-     */
-    onSpeechStart(text) {
-        console.log('[VoiceToAnimationBridge] Speech started:', text);
-
-        if (this.characterManager && !this.isSpeaking) {
-            this.isSpeaking = true;
-            this.characterManager.startTalking();
-        }
-    }
-
-    /**
-     * Schedule speech end
-     */
-    scheduleSpeechEnd(duration) {
-        // Clear any existing timeout
-        if (this.speechTimeout) {
-            clearTimeout(this.speechTimeout);
-        }
-
-        // Schedule stop
-        this.speechTimeout = setTimeout(() => {
-            this.onSpeechEnd();
-        }, duration);
-    }
-
-    /**
-     * Called when speech ends
-     */
-    onSpeechEnd() {
-        console.log('[VoiceToAnimationBridge] Speech ended');
-
-        if (this.characterManager && this.isSpeaking) {
-            this.isSpeaking = false;
-            this.characterManager.stopTalking();
-        }
     }
 }
 

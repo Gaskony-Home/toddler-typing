@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity() {
             settings.mediaPlaybackRequiresUserGesture = false
 
             // Add JavaScript interface
-            addJavascriptInterface(api, "pywebview")
+            addJavascriptInterface(api, "Android")
 
             // Set WebView clients
             webViewClient = object : WebViewClient() {

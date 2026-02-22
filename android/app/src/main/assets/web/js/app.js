@@ -1,92 +1,39 @@
 /**
  * Toddler Typing - Main JavaScript Application
- * Handles UI interactions, navigation, and Python API communication
+ * Handles UI interactions, navigation, and App API communication
  */
 
-// Global state management
-const AppState = {
+// Global state management (exposed on window for api-bridge mute checks)
+const AppState = window.AppState = {
     currentActivity: null,
-    theme: 'light',
+    theme: 'dark',
     isFullscreen: false,
-    version: '1.1.4'
+    isMuted: false,
+    version: ''
 };
 
-// Dinosaur interaction responses
-const DinosaurInteractions = [
-    { phrase: "Hi there! Ready to play?", animation: "wave" },
-    { phrase: "You're doing great!", animation: "happy" },
-    { phrase: "Let's have fun!", animation: "clap" },
-    { phrase: "I love learning with you!", animation: "dance" },
-    { phrase: "That's so cool!", animation: "happy" },
-    { phrase: "Let's try something new!", animation: "point" },
-    { phrase: "You're so smart!", animation: "clap" },
-    { phrase: "Yay! Keep going!", animation: "dance" },
-    { phrase: "Hmm, what should we do next?", animation: "thinking" },
-    { phrase: "Hello friend!", animation: "wave" }
-];
-
-let lastInteractionIndex = -1;
-
-// Handle dinosaur click interactions
-function handleDinosaurClick(event) {
-    console.log('🦕 Dinosaur clicked!', event);
-
-    if (!window.characterManager) {
-        console.error('Character manager not available!');
-        return;
-    }
-
-    // Prevent clicking too rapidly
-    if (window.characterManager.isSpeaking) {
-        console.log('Character is already speaking, ignoring click');
-        return;
-    }
-
-    // Pick a random interaction that's different from the last one
-    let randomIndex;
-    do {
-        randomIndex = Math.floor(Math.random() * DinosaurInteractions.length);
-    } while (randomIndex === lastInteractionIndex && DinosaurInteractions.length > 1);
-
-    lastInteractionIndex = randomIndex;
-    const interaction = DinosaurInteractions[randomIndex];
-
-    console.log('Playing interaction:', interaction);
-
-    // Play animation
-    window.characterManager.playAnimation(interaction.animation);
-
-    // Speak the phrase if API is available
-    if (typeof pywebview !== 'undefined' && pywebview.api && pywebview.api.speak) {
-        console.log('Speaking via API:', interaction.phrase);
-        pywebview.api.speak(interaction.phrase, false);
-    } else {
-        console.log('🦕 Dino says:', interaction.phrase);
-    }
-}
-
-// Python API bridge (will be available via pywebview.api)
-const PythonAPI = {
+// App API bridge (available via window.appBridge)
+const AppAPI = {
     /**
-     * Check if Python API is available
+     * Check if App API is available
      */
     isAvailable() {
-        return typeof pywebview !== 'undefined' && pywebview.api;
+        return typeof window.appBridge !== 'undefined' && window.appBridge;
     },
 
     /**
-     * Call Python API method safely
+     * Call App API method safely
      */
     async call(method, ...args) {
         if (this.isAvailable()) {
             try {
-                return await pywebview.api[method](...args);
+                return await window.appBridge[method](...args);
             } catch (error) {
-                console.error(`Python API call failed: ${method}`, error);
+                console.error(`App API call failed: ${method}`, error);
                 return null;
             }
         } else {
-            console.warn('Python API not available, running in browser mode');
+            console.warn('App API not available, running in browser mode');
             return null;
         }
     },
@@ -124,34 +71,6 @@ const PythonAPI = {
      */
     async loadSettings() {
         return await this.call('load_settings');
-    },
-
-    /**
-     * Play character animation
-     */
-    async playCharacterAnimation(animationName, loop = null) {
-        const result = await this.call('play_character_animation', animationName, loop);
-
-        // Trigger animation on frontend
-        if (window.characterManager && result?.success) {
-            window.characterManager.playAnimation(animationName, loop);
-        }
-
-        return result;
-    },
-
-    /**
-     * Set character emotion
-     */
-    async setCharacterEmotion(emotion) {
-        const result = await this.call('set_character_emotion', emotion);
-
-        // Trigger emotion on frontend
-        if (window.characterManager && result?.success) {
-            window.characterManager.setEmotion(emotion);
-        }
-
-        return result;
     }
 };
 
@@ -308,7 +227,7 @@ class MuteManager {
     constructor() {
         this.muteBtn = document.getElementById('muteToggle');
         this.muteIcon = this.muteBtn?.querySelector('i');
-        this.isMuted = false;
+        this._isMuted = false;
 
         this.init();
     }
@@ -325,7 +244,7 @@ class MuteManager {
     }
 
     setMuted(muted, save = true) {
-        this.isMuted = muted;
+        this._isMuted = muted;
         AppState.isMuted = muted;
 
         // Update icon
@@ -339,23 +258,106 @@ class MuteManager {
             }
         }
 
+        // Stop any ongoing speech when muting
+        if (muted && window.DinoVoice) {
+            window.DinoVoice.stop();
+        }
+
         // Save preference
         if (save) {
             localStorage.setItem('isMuted', muted);
         }
-
-        // Notify Python backend
-        if (typeof PythonAPI !== 'undefined' && PythonAPI.call) {
-            PythonAPI.call('set_muted', muted);
-        }
     }
 
     toggleMute() {
-        this.setMuted(!this.isMuted);
+        this.setMuted(!this._isMuted);
+    }
+}
+
+/**
+ * Update Management
+ */
+class UpdateManager {
+    constructor() {
+        this.updateBtn = document.getElementById('updateBtn');
+        this.updateNowBtn = document.getElementById('updateNowBtn');
+        this.updateModalMessage = document.getElementById('updateModalMessage');
+        this.updateModal = null;
+        this.updateInfo = null;
+
+        this.init();
     }
 
-    isMuted() {
-        return this.isMuted;
+    init() {
+        // Initialize the Bootstrap modal
+        const modalEl = document.getElementById('updateModal');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            this.updateModal = new bootstrap.Modal(modalEl);
+        }
+
+        // Listen for update-available from main process
+        if (window.electronAPI && window.electronAPI.onUpdateAvailable) {
+            window.electronAPI.onUpdateAvailable((info) => {
+                this.onUpdateAvailable(info);
+            });
+        }
+
+        // Listen for update-downloaded
+        if (window.electronAPI && window.electronAPI.onUpdateDownloaded) {
+            window.electronAPI.onUpdateDownloaded(() => {
+                this.onUpdateDownloaded();
+            });
+        }
+
+        // Update button click -> show modal
+        if (this.updateBtn) {
+            this.updateBtn.addEventListener('click', () => this.showUpdateModal());
+        }
+
+        // Update Now button click -> download and install
+        if (this.updateNowBtn) {
+            this.updateNowBtn.addEventListener('click', () => this.startUpdate());
+        }
+    }
+
+    onUpdateAvailable(info) {
+        this.updateInfo = info;
+        console.log('Update available:', info.version);
+
+        // Show the update button
+        if (this.updateBtn) {
+            this.updateBtn.style.display = 'flex';
+        }
+
+        // Update modal message
+        if (this.updateModalMessage) {
+            this.updateModalMessage.textContent = `Version ${info.version} is available. Download and restart to install?`;
+        }
+    }
+
+    onUpdateDownloaded() {
+        console.log('Update downloaded, restarting...');
+        if (window.electronAPI && window.electronAPI.quitAndInstall) {
+            window.electronAPI.quitAndInstall();
+        }
+    }
+
+    showUpdateModal() {
+        if (this.updateModal) {
+            this.updateModal.show();
+        }
+    }
+
+    async startUpdate() {
+        // Update button text to show downloading
+        if (this.updateNowBtn) {
+            this.updateNowBtn.disabled = true;
+            this.updateNowBtn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Downloading...';
+        }
+
+        if (window.electronAPI && window.electronAPI.downloadUpdate) {
+            await window.electronAPI.downloadUpdate();
+        }
     }
 }
 
@@ -401,6 +403,47 @@ class ActivityManager {
         this.currentActivityInstance = null;
     }
 
+    /**
+     * Returns the shared color palette HTML used by drawing, dot2dot, and coloring activities
+     */
+    static getCanvasControlsHTML() {
+        return `
+                    <!-- Color Palette -->
+                    <div class="color-palette" id="colorPalette">
+                        <div class="color-btn active" data-color="#FF0000" style="background: #FF0000;" title="Red"></div>
+                        <div class="color-btn" data-color="#FF7F00" style="background: #FF7F00;" title="Orange"></div>
+                        <div class="color-btn" data-color="#FFFF00" style="background: #FFFF00;" title="Yellow"></div>
+                        <div class="color-btn" data-color="#00FF00" style="background: #00FF00;" title="Green"></div>
+                        <div class="color-btn" data-color="#0000FF" style="background: #0000FF;" title="Blue"></div>
+                        <div class="color-btn" data-color="#4B0082" style="background: #4B0082;" title="Indigo"></div>
+                        <div class="color-btn" data-color="#9400D3" style="background: #9400D3;" title="Violet"></div>
+                        <div class="color-btn" data-color="#000000" style="background: #000000;" title="Black"></div>
+                        <div class="color-btn" data-color="#FFFFFF" style="background: #FFFFFF; border-color: #dee2e6;" title="White"></div>
+                        <div class="color-btn" data-color="#8B4513" style="background: #8B4513;" title="Brown"></div>
+                        <div class="color-btn" data-color="#FFC0CB" style="background: #FFC0CB;" title="Pink"></div>
+                        <div class="color-btn" data-color="#A52A2A" style="background: #A52A2A;" title="Dark Brown"></div>
+                    </div>
+
+                    <!-- Brush Sizes -->
+                    <div class="brush-sizes" id="brushSizes">
+                        <div class="brush-size-btn brush-size-tiny" data-size="3" title="Tiny">
+                            <div class="brush-preview brush-preview-tiny"></div>
+                        </div>
+                        <div class="brush-size-btn brush-size-small" data-size="8" title="Small">
+                            <div class="brush-preview brush-preview-small"></div>
+                        </div>
+                        <div class="brush-size-btn brush-size-medium active" data-size="15" title="Medium">
+                            <div class="brush-preview brush-preview-medium"></div>
+                        </div>
+                        <div class="brush-size-btn brush-size-large" data-size="25" title="Large">
+                            <div class="brush-preview brush-preview-large"></div>
+                        </div>
+                        <div class="brush-size-btn brush-size-xlarge" data-size="40" title="Extra Large">
+                            <div class="brush-preview brush-preview-xlarge"></div>
+                        </div>
+                    </div>`;
+    }
+
     async start(activityName) {
         console.log(`Starting activity: ${activityName}`);
 
@@ -409,8 +452,7 @@ class ActivityManager {
             await this.stop();
         }
 
-        // Notify Python backend
-        await PythonAPI.startActivity(activityName);
+        await AppAPI.startActivity(activityName);
 
         // Show activity screen
         this.navigation.showActivityScreen(activityName);
@@ -431,8 +473,7 @@ class ActivityManager {
             this.currentActivityInstance = null;
         }
 
-        // Notify Python backend
-        await PythonAPI.stopActivity();
+        await AppAPI.stopActivity();
 
         // Return to main menu
         this.navigation.showMainMenu();
@@ -536,6 +577,7 @@ class ActivityManager {
     }
 
     getDrawingContent() {
+        const controls = ActivityManager.getCanvasControlsHTML();
         return `
             <div class="activity-container drawing-activity">
                 <!-- Title -->
@@ -544,40 +586,7 @@ class ActivityManager {
                 <canvas id="drawingCanvas" width="1400" height="800"></canvas>
 
                 <div class="drawing-controls">
-                    <!-- Color Palette -->
-                    <div class="color-palette" id="colorPalette">
-                        <div class="color-btn active" data-color="#FF0000" style="background: #FF0000;" title="Red"></div>
-                        <div class="color-btn" data-color="#FF7F00" style="background: #FF7F00;" title="Orange"></div>
-                        <div class="color-btn" data-color="#FFFF00" style="background: #FFFF00;" title="Yellow"></div>
-                        <div class="color-btn" data-color="#00FF00" style="background: #00FF00;" title="Green"></div>
-                        <div class="color-btn" data-color="#0000FF" style="background: #0000FF;" title="Blue"></div>
-                        <div class="color-btn" data-color="#4B0082" style="background: #4B0082;" title="Indigo"></div>
-                        <div class="color-btn" data-color="#9400D3" style="background: #9400D3;" title="Violet"></div>
-                        <div class="color-btn" data-color="#000000" style="background: #000000;" title="Black"></div>
-                        <div class="color-btn" data-color="#FFFFFF" style="background: #FFFFFF; border-color: #dee2e6;" title="White"></div>
-                        <div class="color-btn" data-color="#8B4513" style="background: #8B4513;" title="Brown"></div>
-                        <div class="color-btn" data-color="#FFC0CB" style="background: #FFC0CB;" title="Pink"></div>
-                        <div class="color-btn" data-color="#A52A2A" style="background: #A52A2A;" title="Dark Brown"></div>
-                    </div>
-
-                    <!-- Brush Sizes -->
-                    <div class="brush-sizes" id="brushSizes">
-                        <div class="brush-size-btn brush-size-tiny" data-size="3" title="Tiny">
-                            <div class="brush-preview brush-preview-tiny"></div>
-                        </div>
-                        <div class="brush-size-btn brush-size-small" data-size="8" title="Small">
-                            <div class="brush-preview brush-preview-small"></div>
-                        </div>
-                        <div class="brush-size-btn brush-size-medium active" data-size="15" title="Medium">
-                            <div class="brush-preview brush-preview-medium"></div>
-                        </div>
-                        <div class="brush-size-btn brush-size-large" data-size="25" title="Large">
-                            <div class="brush-preview brush-preview-large"></div>
-                        </div>
-                        <div class="brush-size-btn brush-size-xlarge" data-size="40" title="Extra Large">
-                            <div class="brush-preview brush-preview-xlarge"></div>
-                        </div>
-                    </div>
+                    ${controls}
 
                     <!-- Action Buttons -->
                     <div class="drawing-action-buttons">
@@ -610,6 +619,7 @@ class ActivityManager {
     }
 
     getDot2DotContent() {
+        const controls = ActivityManager.getCanvasControlsHTML();
         return `
             <div class="activity-container drawing-activity">
                 <!-- Title and Counter -->
@@ -624,40 +634,7 @@ class ActivityManager {
                 </div>
 
                 <div class="drawing-controls">
-                    <!-- Color Palette -->
-                    <div class="color-palette" id="colorPalette">
-                        <div class="color-btn active" data-color="#FF0000" style="background: #FF0000;" title="Red"></div>
-                        <div class="color-btn" data-color="#FF7F00" style="background: #FF7F00;" title="Orange"></div>
-                        <div class="color-btn" data-color="#FFFF00" style="background: #FFFF00;" title="Yellow"></div>
-                        <div class="color-btn" data-color="#00FF00" style="background: #00FF00;" title="Green"></div>
-                        <div class="color-btn" data-color="#0000FF" style="background: #0000FF;" title="Blue"></div>
-                        <div class="color-btn" data-color="#4B0082" style="background: #4B0082;" title="Indigo"></div>
-                        <div class="color-btn" data-color="#9400D3" style="background: #9400D3;" title="Violet"></div>
-                        <div class="color-btn" data-color="#000000" style="background: #000000;" title="Black"></div>
-                        <div class="color-btn" data-color="#FFFFFF" style="background: #FFFFFF; border-color: #dee2e6;" title="White"></div>
-                        <div class="color-btn" data-color="#8B4513" style="background: #8B4513;" title="Brown"></div>
-                        <div class="color-btn" data-color="#FFC0CB" style="background: #FFC0CB;" title="Pink"></div>
-                        <div class="color-btn" data-color="#A52A2A" style="background: #A52A2A;" title="Dark Brown"></div>
-                    </div>
-
-                    <!-- Brush Sizes -->
-                    <div class="brush-sizes" id="brushSizes">
-                        <div class="brush-size-btn brush-size-tiny" data-size="3" title="Tiny">
-                            <div class="brush-preview brush-preview-tiny"></div>
-                        </div>
-                        <div class="brush-size-btn brush-size-small" data-size="8" title="Small">
-                            <div class="brush-preview brush-preview-small"></div>
-                        </div>
-                        <div class="brush-size-btn brush-size-medium active" data-size="15" title="Medium">
-                            <div class="brush-preview brush-preview-medium"></div>
-                        </div>
-                        <div class="brush-size-btn brush-size-large" data-size="25" title="Large">
-                            <div class="brush-preview brush-preview-large"></div>
-                        </div>
-                        <div class="brush-size-btn brush-size-xlarge" data-size="40" title="Extra Large">
-                            <div class="brush-preview brush-preview-xlarge"></div>
-                        </div>
-                    </div>
+                    ${controls}
 
                     <!-- Navigation and Action Buttons -->
                     <div class="drawing-action-buttons">
@@ -720,6 +697,7 @@ class ActivityManager {
     }
 
     getColoringContent() {
+        const controls = ActivityManager.getCanvasControlsHTML();
         return `
             <div class="activity-container drawing-activity">
                 <!-- Title and Counter -->
@@ -734,40 +712,7 @@ class ActivityManager {
                 </div>
 
                 <div class="drawing-controls">
-                    <!-- Color Palette -->
-                    <div class="color-palette" id="colorPalette">
-                        <div class="color-btn active" data-color="#FF0000" style="background: #FF0000;" title="Red"></div>
-                        <div class="color-btn" data-color="#FF7F00" style="background: #FF7F00;" title="Orange"></div>
-                        <div class="color-btn" data-color="#FFFF00" style="background: #FFFF00;" title="Yellow"></div>
-                        <div class="color-btn" data-color="#00FF00" style="background: #00FF00;" title="Green"></div>
-                        <div class="color-btn" data-color="#0000FF" style="background: #0000FF;" title="Blue"></div>
-                        <div class="color-btn" data-color="#4B0082" style="background: #4B0082;" title="Indigo"></div>
-                        <div class="color-btn" data-color="#9400D3" style="background: #9400D3;" title="Violet"></div>
-                        <div class="color-btn" data-color="#000000" style="background: #000000;" title="Black"></div>
-                        <div class="color-btn" data-color="#FFFFFF" style="background: #FFFFFF; border-color: #dee2e6;" title="White"></div>
-                        <div class="color-btn" data-color="#8B4513" style="background: #8B4513;" title="Brown"></div>
-                        <div class="color-btn" data-color="#FFC0CB" style="background: #FFC0CB;" title="Pink"></div>
-                        <div class="color-btn" data-color="#A52A2A" style="background: #A52A2A;" title="Dark Brown"></div>
-                    </div>
-
-                    <!-- Brush Sizes -->
-                    <div class="brush-sizes" id="brushSizes">
-                        <div class="brush-size-btn brush-size-tiny" data-size="3" title="Tiny">
-                            <div class="brush-preview brush-preview-tiny"></div>
-                        </div>
-                        <div class="brush-size-btn brush-size-small" data-size="8" title="Small">
-                            <div class="brush-preview brush-preview-small"></div>
-                        </div>
-                        <div class="brush-size-btn brush-size-medium active" data-size="15" title="Medium">
-                            <div class="brush-preview brush-preview-medium"></div>
-                        </div>
-                        <div class="brush-size-btn brush-size-large" data-size="25" title="Large">
-                            <div class="brush-preview brush-preview-large"></div>
-                        </div>
-                        <div class="brush-size-btn brush-size-xlarge" data-size="40" title="Extra Large">
-                            <div class="brush-preview brush-preview-xlarge"></div>
-                        </div>
-                    </div>
+                    ${controls}
 
                     <!-- Navigation and Action Buttons -->
                     <div class="drawing-action-buttons">
@@ -794,6 +739,7 @@ class ActivityManager {
 let themeManager;
 let fullscreenManager;
 let muteManager;
+let updateManager;
 let navigationManager;
 let activityManager;
 let characterManager;
@@ -819,10 +765,17 @@ window.returnToMenu = function() {
 async function initApp() {
     console.log('Initializing Toddler Typing application...');
 
+    // Initialize DinoVoice TTS (Web Speech API)
+    if (window.DinoVoice) {
+        window.DinoVoice.init();
+        console.log('DinoVoice TTS initialized');
+    }
+
     // Initialize managers
     themeManager = new ThemeManager();
     fullscreenManager = new FullscreenManager();
     muteManager = new MuteManager();
+    updateManager = new UpdateManager();
     navigationManager = new NavigationManager();
     activityManager = new ActivityManager(navigationManager);
 
@@ -841,7 +794,7 @@ async function initApp() {
         // Try to initialize 3D character
         try {
             await characterManager.init();
-            console.log('✓ 3D Character loaded successfully!');
+            console.log('3D Character loaded successfully!');
 
             // Wave hello to the user after a brief delay
             setTimeout(() => {
@@ -851,16 +804,16 @@ async function initApp() {
             // Set up voice-to-animation bridge
             if (typeof VoiceToAnimationBridge !== 'undefined') {
                 window.voiceToAnimationBridge = new VoiceToAnimationBridge(characterManager);
-                console.log('✓ Voice-to-animation bridge initialized');
+                console.log('Voice-to-animation bridge initialized');
             }
         } catch (error) {
-            console.error('✗ 3D Character initialization failed:', error);
+            console.error('3D Character initialization failed:', error);
             console.log('Falling back to 2D character...');
             // Try 2D fallback
             if (typeof CharacterManager2D !== 'undefined') {
                 characterManager = new CharacterManager2D(characterContainer);
                 await characterManager.init();
-                console.log('✓ 2D Character fallback loaded');
+                console.log('2D Character fallback loaded');
             }
         }
     } else {
@@ -869,7 +822,7 @@ async function initApp() {
         if (characterContainer && typeof CharacterManager2D !== 'undefined') {
             characterManager = new CharacterManager2D(characterContainer);
             await characterManager.init();
-            console.log('✓ 2D Character loaded (fallback)');
+            console.log('2D Character loaded (fallback)');
         } else {
             console.error('No character manager available!');
         }
@@ -880,21 +833,17 @@ async function initApp() {
         window.characterManager = characterManager;
     }
 
-    // Set up dinosaur click interactions
-    if (characterContainer && characterManager) {
-        characterContainer.addEventListener('click', handleDinosaurClick);
-        console.log('✓ Dinosaur click interactions enabled');
-    }
-
-    // Load version
+    // Load version from backend
     const versionLabel = document.getElementById('versionLabel');
     if (versionLabel) {
-        const version = await PythonAPI.getVersion() || AppState.version;
-        versionLabel.textContent = `v${version}`;
+        const version = await AppAPI.getVersion() || AppState.version;
+        if (version) {
+            versionLabel.textContent = `v${version}`;
+        }
     }
 
     // Load settings
-    const settings = await PythonAPI.loadSettings();
+    const settings = await AppAPI.loadSettings();
     if (settings) {
         if (settings.theme) {
             themeManager.setTheme(settings.theme);
@@ -914,15 +863,19 @@ if (document.readyState === 'loading') {
 }
 
 /**
- * Export for testing (if running in browser)
+ * Export for testing (if running in Node.js)
  */
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        AppState,
-        PythonAPI,
-        ThemeManager,
-        FullscreenManager,
-        NavigationManager,
-        ActivityManager
-    };
+try {
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = {
+            AppState,
+            AppAPI,
+            ThemeManager,
+            FullscreenManager,
+            NavigationManager,
+            ActivityManager
+        };
+    }
+} catch (_e) {
+    // Silently ignore in Electron renderer (contextIsolation)
 }

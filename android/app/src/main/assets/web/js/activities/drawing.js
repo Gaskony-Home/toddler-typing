@@ -11,6 +11,7 @@ class DrawingActivity {
         this.currentBrushSize = 15; // Medium by default
         this.lastX = 0;
         this.lastY = 0;
+        this._resizeHandler = () => this.resizeCanvas();
     }
 
     async start() {
@@ -27,7 +28,7 @@ class DrawingActivity {
 
         // Set canvas size to be responsive
         this.resizeCanvas();
-        window.addEventListener('resize', () => this.resizeCanvas());
+        window.addEventListener('resize', this._resizeHandler);
 
         // Initialize canvas
         this.clearCanvas();
@@ -62,11 +63,8 @@ class DrawingActivity {
         const colorButtons = document.querySelectorAll('.color-btn');
         colorButtons.forEach(btn => {
             btn.addEventListener('click', () => {
-                // Remove active class from all buttons
                 colorButtons.forEach(b => b.classList.remove('active'));
-                // Add active class to clicked button
                 btn.classList.add('active');
-                // Set current color
                 this.currentColor = btn.dataset.color;
             });
         });
@@ -76,11 +74,8 @@ class DrawingActivity {
         const sizeButtons = document.querySelectorAll('.brush-size-btn');
         sizeButtons.forEach(btn => {
             btn.addEventListener('click', () => {
-                // Remove active class from all buttons
                 sizeButtons.forEach(b => b.classList.remove('active'));
-                // Add active class to clicked button
                 btn.classList.add('active');
-                // Set current brush size
                 this.currentBrushSize = parseInt(btn.dataset.size);
             });
         });
@@ -110,29 +105,23 @@ class DrawingActivity {
     saveDrawing() {
         if (!this.canvas) return;
 
-        // Convert canvas to data URL (PNG format)
         const dataURL = this.canvas.toDataURL('image/png');
 
-        // Create a temporary link element
         const link = document.createElement('a');
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
         link.download = `toddler-drawing-${timestamp}.png`;
         link.href = dataURL;
 
-        // Trigger download
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
 
         console.log('Drawing saved successfully');
 
-        // Give feedback (optional - speak or show message)
         if (window.characterManager) {
             window.characterManager.playAnimation('happy', false);
         }
-        if (typeof PythonAPI !== 'undefined' && PythonAPI.call) {
-            PythonAPI.call('speak', 'Drawing saved!');
-        }
+        AppAPI.call('speak', 'Drawing saved!');
     }
 
     setupDrawingEvents() {
@@ -203,7 +192,6 @@ class DrawingActivity {
 
     stop() {
         console.log('Stopping Drawing activity');
-        // Clean up event listeners
-        window.removeEventListener('resize', () => this.resizeCanvas());
+        window.removeEventListener('resize', this._resizeHandler);
     }
 }
