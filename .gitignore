@@ -151,8 +151,12 @@ cython_debug/
 Thumbs.db
 
 # Project-specific
-config.json
 *.db
+
+# Node / Electron
+node_modules/
+out/
+package-lock.json
 
 # Android
 android/.gradle/

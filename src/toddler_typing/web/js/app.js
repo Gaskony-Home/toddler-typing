@@ -3,11 +3,12 @@
  * Handles UI interactions, navigation, and Python API communication
  */
 
-// Global state management
-const AppState = {
+// Global state management (exposed on window for api-bridge mute checks)
+const AppState = window.AppState = {
     currentActivity: null,
     theme: 'light',
     isFullscreen: false,
+    isMuted: false,
     version: '1.1.4'
 };
 
@@ -339,12 +340,17 @@ class MuteManager {
             }
         }
 
+        // Stop any ongoing speech when muting
+        if (muted && window.DinoVoice) {
+            window.DinoVoice.stop();
+        }
+
         // Save preference
         if (save) {
             localStorage.setItem('isMuted', muted);
         }
 
-        // Notify Python backend
+        // Notify backend
         if (typeof PythonAPI !== 'undefined' && PythonAPI.call) {
             PythonAPI.call('set_muted', muted);
         }
@@ -356,6 +362,93 @@ class MuteManager {
 
     isMuted() {
         return this.isMuted;
+    }
+}
+
+/**
+ * Update Management
+ */
+class UpdateManager {
+    constructor() {
+        this.updateBtn = document.getElementById('updateBtn');
+        this.updateNowBtn = document.getElementById('updateNowBtn');
+        this.updateModalMessage = document.getElementById('updateModalMessage');
+        this.updateModal = null;
+        this.updateInfo = null;
+
+        this.init();
+    }
+
+    init() {
+        // Initialize the Bootstrap modal
+        const modalEl = document.getElementById('updateModal');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            this.updateModal = new bootstrap.Modal(modalEl);
+        }
+
+        // Listen for update-available from main process
+        if (window.electronAPI && window.electronAPI.onUpdateAvailable) {
+            window.electronAPI.onUpdateAvailable((info) => {
+                this.onUpdateAvailable(info);
+            });
+        }
+
+        // Listen for update-downloaded
+        if (window.electronAPI && window.electronAPI.onUpdateDownloaded) {
+            window.electronAPI.onUpdateDownloaded(() => {
+                this.onUpdateDownloaded();
+            });
+        }
+
+        // Update button click -> show modal
+        if (this.updateBtn) {
+            this.updateBtn.addEventListener('click', () => this.showUpdateModal());
+        }
+
+        // Update Now button click -> download and install
+        if (this.updateNowBtn) {
+            this.updateNowBtn.addEventListener('click', () => this.startUpdate());
+        }
+    }
+
+    onUpdateAvailable(info) {
+        this.updateInfo = info;
+        console.log('Update available:', info.version);
+
+        // Show the update button
+        if (this.updateBtn) {
+            this.updateBtn.style.display = 'flex';
+        }
+
+        // Update modal message
+        if (this.updateModalMessage) {
+            this.updateModalMessage.textContent = `Version ${info.version} is available. Download and restart to install?`;
+        }
+    }
+
+    onUpdateDownloaded() {
+        console.log('Update downloaded, restarting...');
+        if (window.electronAPI && window.electronAPI.quitAndInstall) {
+            window.electronAPI.quitAndInstall();
+        }
+    }
+
+    showUpdateModal() {
+        if (this.updateModal) {
+            this.updateModal.show();
+        }
+    }
+
+    async startUpdate() {
+        // Update button text to show downloading
+        if (this.updateNowBtn) {
+            this.updateNowBtn.disabled = true;
+            this.updateNowBtn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Downloading...';
+        }
+
+        if (window.electronAPI && window.electronAPI.downloadUpdate) {
+            await window.electronAPI.downloadUpdate();
+        }
     }
 }
 
@@ -794,6 +887,7 @@ class ActivityManager {
 let themeManager;
 let fullscreenManager;
 let muteManager;
+let updateManager;
 let navigationManager;
 let activityManager;
 let characterManager;
@@ -819,10 +913,17 @@ window.returnToMenu = function() {
 async function initApp() {
     console.log('Initializing Toddler Typing application...');
 
+    // Initialize DinoVoice TTS (Web Speech API)
+    if (window.DinoVoice) {
+        window.DinoVoice.init();
+        console.log('DinoVoice TTS initialized');
+    }
+
     // Initialize managers
     themeManager = new ThemeManager();
     fullscreenManager = new FullscreenManager();
     muteManager = new MuteManager();
+    updateManager = new UpdateManager();
     navigationManager = new NavigationManager();
     activityManager = new ActivityManager(navigationManager);
 
@@ -914,15 +1015,19 @@ if (document.readyState === 'loading') {
 }
 
 /**
- * Export for testing (if running in browser)
+ * Export for testing (if running in Node.js)
  */
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        AppState,
-        PythonAPI,
-        ThemeManager,
-        FullscreenManager,
-        NavigationManager,
-        ActivityManager
-    };
+try {
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = {
+            AppState,
+            PythonAPI,
+            ThemeManager,
+            FullscreenManager,
+            NavigationManager,
+            ActivityManager
+        };
+    }
+} catch (_e) {
+    // Silently ignore in Electron renderer (contextIsolation)
 }
