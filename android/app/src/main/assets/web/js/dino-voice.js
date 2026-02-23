@@ -1,12 +1,11 @@
 /**
  * DinoVoice - Dual-engine TTS with dinosaur voice effects
  *
- * Primary engine: Piper TTS (via sherpa-onnx in main process) with Web Audio
- * effects chain — pitch shift, bass boost, cave reverb — for a warm, deep,
- * realistic dinosaur voice.
+ * Primary engine: PocketTTS voice cloning (via sherpa-onnx in main process)
+ * with Web Audio effects chain — gentle warmth and light reverb.
  *
  * Fallback engine: Web Speech API with low pitch/rate settings (for Android
- * or when Piper is unavailable).
+ * or when PocketTTS is unavailable).
  *
  * Public API unchanged: { speak, stop, init, speakPhrase }
  */
@@ -56,27 +55,28 @@
     }
   }
 
-  // ───── Piper TTS + Web Audio effects engine ─────
+  // ───── PocketTTS + Web Audio effects engine ─────
 
-  let usePiperTTS = false;
+  let usePocketTTS = false;
   let audioCtx = null;
   let convolverNode = null;
   let currentSource = null;
   let initialized = false;
 
-  // Effects chain parameters
-  const PLAYBACK_RATE = 0.88;       // Pitch down ~12%
-  const LOWPASS_FREQ = 2800;        // Remove harshness
-  const BASS_FREQ = 200;            // Chest rumble center
-  const BASS_GAIN = 4;              // +4dB bass boost
-  const REVERB_DURATION = 0.8;      // 800ms cave reverb tail
-  const MASTER_GAIN = 0.9;          // Final volume
+  // Effects chain parameters — light touch since voice cloning preserves character:
+  // PocketTTS clones the reference voice directly, so we only add subtle warmth
+  const PLAYBACK_RATE = 1.0;          // No pitch shift needed (voice is already cloned)
+  const LOWPASS_FREQ = 8000;          // Very gentle high cut, keep it natural
+  const BASS_FREQ = 200;             // Subtle warmth
+  const BASS_GAIN = 1;               // +1dB gentle body
+  const REVERB_DURATION = 0.2;       // Tiny reverb for slight depth
+  const MASTER_GAIN = 0.95;          // Final volume
 
   /**
-   * Generate a synthetic cave-like impulse response (no external files needed).
+   * Generate a synthetic room impulse response (no external files needed).
    * Creates exponential-decay random noise in stereo.
    */
-  function createCaveImpulse(ctx, duration) {
+  function createRoomImpulse(ctx, duration) {
     const sampleRate = ctx.sampleRate;
     const length = Math.floor(sampleRate * duration);
     const impulse = ctx.createBuffer(2, length, sampleRate);
@@ -84,7 +84,6 @@
     for (let channel = 0; channel < 2; channel++) {
       const data = impulse.getChannelData(channel);
       for (let i = 0; i < length; i++) {
-        // Exponential decay with random noise
         data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.5);
       }
     }
@@ -93,32 +92,32 @@
 
   /**
    * Build the persistent effects chain (reused across all utterances).
-   * Chain: source → lowpass → bass boost → convolver (reverb) → gain → destination
+   * Chain: source → lowpass → bass boost → dry/wet reverb → gain → destination
    */
   function buildEffectsChain() {
     if (!audioCtx) return null;
 
-    // Lowpass filter — removes high-frequency harshness, adds warmth
+    // Gentle lowpass — keeps voice natural, just softens harsh edges
     const lowpass = audioCtx.createBiquadFilter();
     lowpass.type = 'lowpass';
     lowpass.frequency.value = LOWPASS_FREQ;
 
-    // Bass boost — adds chest/rumble character
+    // Subtle bass boost — adds slight warmth
     const bassBoost = audioCtx.createBiquadFilter();
     bassBoost.type = 'peaking';
     bassBoost.frequency.value = BASS_FREQ;
     bassBoost.gain.value = BASS_GAIN;
     bassBoost.Q.value = 1.0;
 
-    // Cave reverb via convolver
+    // Light room reverb via convolver
     convolverNode = audioCtx.createConvolver();
-    convolverNode.buffer = createCaveImpulse(audioCtx, REVERB_DURATION);
+    convolverNode.buffer = createRoomImpulse(audioCtx, REVERB_DURATION);
 
-    // Dry/wet mixer: blend original with reverb
+    // Dry/wet mixer: mostly dry, hint of reverb
     const dryGain = audioCtx.createGain();
-    dryGain.gain.value = 0.7;
+    dryGain.gain.value = 0.85;
     const wetGain = audioCtx.createGain();
-    wetGain.gain.value = 0.3;
+    wetGain.gain.value = 0.15;
 
     // Master gain
     const masterGain = audioCtx.createGain();
@@ -151,22 +150,22 @@
     // Always prepare Web Speech API as fallback
     initWebSpeech();
 
-    // Try to use Piper TTS (only available in Electron)
+    // Try to use PocketTTS (only available in Electron)
     if (window.electronAPI && typeof window.electronAPI.ttsIsAvailable === 'function') {
       try {
         const available = await window.electronAPI.ttsIsAvailable();
         if (available) {
           audioCtx = new (window.AudioContext || window.webkitAudioContext)();
           effectsChainEntry = buildEffectsChain();
-          usePiperTTS = true;
-          console.log('[DinoVoice] Piper TTS active with Web Audio effects chain');
+          usePocketTTS = true;
+          console.log('[DinoVoice] PocketTTS voice cloning active');
         }
       } catch (err) {
-        console.warn('[DinoVoice] Piper TTS check failed:', err.message);
+        console.warn('[DinoVoice] PocketTTS check failed:', err.message);
       }
     }
 
-    if (!usePiperTTS) {
+    if (!usePocketTTS) {
       console.log('[DinoVoice] Using Web Speech API fallback, voice:', selectedVoice?.name || 'default');
     }
 
@@ -193,9 +192,9 @@
     }
   }
 
-  // ───── Piper TTS speak path ─────
+  // ───── PocketTTS speak path ─────
 
-  async function speakWithPiper(text) {
+  async function speakWithPocketTTS(text) {
     // Resume AudioContext if suspended (browser autoplay policy)
     if (audioCtx.state === 'suspended') {
       await audioCtx.resume();
@@ -207,10 +206,9 @@
       currentSource = null;
     }
 
-    // Request audio from main process
-    const result = await window.electronAPI.ttsSpeak({ text, speed: 0.85 });
+    // Request audio from main process (speed 0.9 for slight dino drawl)
+    const result = await window.electronAPI.ttsSpeak({ text, speed: 0.9 });
     if (!result || !result.available || !result.samples) {
-      // Fall back to Web Speech for this utterance
       speakWithWebSpeech(text);
       return;
     }
@@ -278,9 +276,9 @@
 
     if (interrupt) stop();
 
-    if (usePiperTTS) {
-      speakWithPiper(text).catch(err => {
-        console.warn('[DinoVoice] Piper speak failed, falling back:', err.message);
+    if (usePocketTTS) {
+      speakWithPocketTTS(text).catch(err => {
+        console.warn('[DinoVoice] PocketTTS speak failed, falling back:', err.message);
         speakWithWebSpeech(text);
       });
     } else {
@@ -289,7 +287,7 @@
   }
 
   function stop() {
-    // Stop Piper audio
+    // Stop PocketTTS audio
     if (currentSource) {
       try { currentSource.stop(); } catch (_) { /* already stopped */ }
       currentSource = null;

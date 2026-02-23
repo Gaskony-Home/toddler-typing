@@ -4,7 +4,7 @@ const { SettingsManager } = require('./modules/settings-manager');
 
 // Security constants
 const MAX_KEY_LENGTH = 10;
-const VALID_ACTIVITIES = new Set(['letters_numbers', 'drawing', 'colors_shapes', 'coloring', 'dot2dot', 'sounds', 'typing_game']);
+const VALID_ACTIVITIES = new Set(['letters_numbers', 'drawing', 'colors_shapes', 'coloring', 'dot2dot', 'sounds', 'typing_game', 'memory_game', 'jigsaw', 'sorting']);
 const VALID_THEMES = new Set(['light', 'dark']);
 const ALPHANUMERIC_RE = /^[a-zA-Z0-9]+$/;
 
@@ -261,6 +261,32 @@ function registerIpcHandlers(kbLocker) {
       stars_awarded: count,
       total_stars: progressManager.totalStars
     };
+  });
+
+  // === Stickers & Accessories ===
+
+  ipcMain.handle('award-sticker', (_event, stickerId) => {
+    if (!validateString(stickerId, 50)) {
+      return { success: false, error: 'Invalid sticker ID' };
+    }
+    const awarded = progressManager.awardSticker(stickerId);
+    return { success: true, awarded, stickers: progressManager.stickersCollected };
+  });
+
+  ipcMain.handle('unlock-accessory', (_event, accessoryId) => {
+    if (!validateString(accessoryId, 50)) {
+      return { success: false, error: 'Invalid accessory ID' };
+    }
+    const unlocked = progressManager.unlockAccessory(accessoryId);
+    return { success: true, unlocked, accessories: progressManager.accessoriesUnlocked };
+  });
+
+  ipcMain.handle('set-outfit', (_event, slot, itemId) => {
+    if (!validateString(slot, 20)) {
+      return { success: false, error: 'Invalid slot' };
+    }
+    const result = progressManager.setOutfit(slot, itemId);
+    return { success: result, outfit: progressManager.currentOutfit };
   });
 
   // === System ===

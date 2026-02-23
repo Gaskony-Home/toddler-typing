@@ -60,10 +60,38 @@ class DrawingActivity {
     }
 
     setupColorPalette() {
-        const colorButtons = document.querySelectorAll('.color-btn');
-        colorButtons.forEach(btn => {
+        this.palettePage = 0;
+        this.totalPalettePages = Math.ceil(ActivityManager.PALETTE_COLORS.length / ActivityManager.PALETTE_PAGE_SIZE);
+        this.renderPalettePage();
+
+        const prevBtn = document.getElementById('palettePrev');
+        const nextBtn = document.getElementById('paletteNext');
+        if (prevBtn) prevBtn.addEventListener('click', () => {
+            this.palettePage = (this.palettePage - 1 + this.totalPalettePages) % this.totalPalettePages;
+            this.renderPalettePage();
+        });
+        if (nextBtn) nextBtn.addEventListener('click', () => {
+            this.palettePage = (this.palettePage + 1) % this.totalPalettePages;
+            this.renderPalettePage();
+        });
+    }
+
+    renderPalettePage() {
+        const palette = document.getElementById('colorPalette');
+        if (!palette) return;
+
+        const start = this.palettePage * ActivityManager.PALETTE_PAGE_SIZE;
+        const colors = ActivityManager.PALETTE_COLORS.slice(start, start + ActivityManager.PALETTE_PAGE_SIZE);
+
+        palette.innerHTML = colors.map(c => {
+            const border = c.border ? ' border-color: #dee2e6;' : '';
+            const active = c.hex === this.currentColor ? ' active' : '';
+            return `<div class="color-btn${active}" data-color="${c.hex}" style="background: ${c.hex};${border}" title="${c.name}"></div>`;
+        }).join('');
+
+        palette.querySelectorAll('.color-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                colorButtons.forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.currentColor = btn.dataset.color;
             });

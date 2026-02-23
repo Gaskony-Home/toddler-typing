@@ -59,6 +59,11 @@
     api.get_progress = () => e.getProgress();
     api.award_stars = (activity, count) => e.awardStars(activity, count);
 
+    // Stickers & Accessories
+    api.award_sticker = (stickerId) => e.awardSticker(stickerId);
+    api.unlock_accessory = (accessoryId) => e.unlockAccessory(accessoryId);
+    api.set_outfit = (slot, itemId) => e.setOutfit(slot, itemId);
+
     // System
     api.get_version = () => e.getVersion();
     api.get_system_info = () => e.getSystemInfo();
@@ -95,6 +100,9 @@
     api.get_typing_game_progress = () => callAndroid('getTypingGameProgress');
     api.get_progress = () => callAndroid('getProgress');
     api.award_stars = (act, cnt) => callAndroid('awardStars', act, cnt);
+    api.award_sticker = (id) => callAndroid('awardSticker', id);
+    api.unlock_accessory = (id) => callAndroid('unlockAccessory', id);
+    api.set_outfit = (slot, id) => callAndroid('setOutfit', slot, id);
     api.get_version = () => callAndroid('getVersion');
     api.get_system_info = () => callAndroid('getSystemInfo');
 
@@ -109,6 +117,7 @@
       'get_random_letter_or_number', 'check_letter_number_answer',
       'get_typing_challenge', 'check_typing_answer', 'get_typing_game_progress',
       'get_progress', 'award_stars',
+      'award_sticker', 'unlock_accessory', 'set_outfit',
       'get_version', 'get_system_info'
     ];
     for (const m of methods) {

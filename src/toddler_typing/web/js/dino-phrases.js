@@ -118,6 +118,83 @@
       ]
     },
 
+    dino_click: [
+      "Heeey.. you tapped me! That tickles!",
+      "Rooooar! Just kidding.. hehe!",
+      "Ohhh.. hi there, friend!",
+      "Did you know.. dinosaurs looved to learn tooo?",
+      "Weeee! You found me!",
+      "I looove hanging out with you!",
+      "Heeey buddy.. let's keep playing!",
+      "Ohhh.. you're sooo friendly!",
+      "Raawr.. that means I love you in dinosaur!",
+      "Heeheehee.. do that again!",
+      "You're my faaavorite human!",
+      "Ohhh.. I was just thinking about you!",
+      "Boop! You booped my nose!",
+      "Wooow.. you're really good at tapping!"
+    ],
+
+    activity_welcome: {
+      letters_numbers: [
+        "Ohhh.. let's learn some letters and numbers! Press the key you see on the screen!",
+        "Weeelcome to letters and numbers! Look at the big letter.. then fiiind it on the keyboard!",
+        "Heeey.. time to practice! I'll show you a letter or number.. you press it!"
+      ],
+      typing_game: [
+        "Ohhh.. typing time! Press the key that matches what you see!",
+        "Weeelcome to the typing game! Start with letters.. then unlock numbers and words!",
+        "Heeey.. let's type! Look at the screen and press the matching key!"
+      ],
+      drawing: [
+        "Ohhh.. free drawing time! Pick a color and draaaw anything you like!",
+        "Weeelcome to drawing! Use your finger or mouse to make something beautiful!",
+        "Heeey artist.. the canvas is all yours! Pick colors and go craaazy!"
+      ],
+      colors_shapes: [
+        "Ohhh.. colors and shapes! Click on the shape I ask for!",
+        "Weeelcome! I'll ask for a color and shape.. you fiiind it and tap it!",
+        "Heeey.. let's learn shapes! Listen to what I say.. then click the right one!"
+      ],
+      coloring: [
+        "Ohhh.. coloring time! Pick a color and fill in the picture!",
+        "Weeelcome to coloring! Choose your favorite colors and make it pretty!",
+        "Heeey.. let's color! Pick a color below.. then tap inside the picture!"
+      ],
+      dot2dot: [
+        "Ohhh.. dot to dot! Connect the dots to make a picture.. then color it in!",
+        "Weeelcome! Follow the numbers and connect the dots in order!",
+        "Heeey.. let's connect dots! Tap each dot in the right order!"
+      ],
+      sounds: [
+        "Ohhh.. letter sounds! Listen to the sound.. then pick the right word!",
+        "Weeelcome to the sound quiz! Can you fiiind the word with the right sound?",
+        "Heeey.. time for sounds! Listen carefully and choose the right answer!"
+      ],
+      memory_game: [
+        "Ohhh.. memory time! Flip two cards and try to fiiind the matching pairs!",
+        "Weeelcome to the memory game! Remember where the cards are!",
+        "Heeey.. let's test your memory! Tap two cards to see if they match!"
+      ],
+      jigsaw: [
+        "Ohhh.. puzzle time! Tap a piece.. then tap where it goes!",
+        "Weeelcome to jigsaw puzzles! Put the pieces in the right spots!",
+        "Heeey.. let's solve a puzzle! Pick a piece and fiiind where it belongs!"
+      ],
+      sorting: [
+        "Ohhh.. sorting time! Put each item in the right basket!",
+        "Weeelcome to sorting! Look at the item.. then tap the right group!",
+        "Heeey.. let's sort things! Which basket does it belong in?"
+      ]
+    },
+
+    menu_welcome: [
+      "Weeelcome back! Pick an activity.. any activity!",
+      "Heeey.. choose what you wanna play!",
+      "Ohhh.. so many fun things to do! Pick one!",
+      "Hiii again! What shall we learn today?"
+    ],
+
     idle_nudge: [
       "Heeey.. are you still there, buddy?",
       "I'm waaiting for you.. press a key!",

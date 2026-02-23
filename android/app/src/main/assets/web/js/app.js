@@ -453,22 +453,55 @@ class ActivityManager {
     /**
      * Returns the shared color palette HTML used by drawing, dot2dot, and coloring activities
      */
+    static PALETTE_COLORS = [
+        { hex: '#FF0000', name: 'Red' },
+        { hex: '#FF7F00', name: 'Orange' },
+        { hex: '#FFFF00', name: 'Yellow' },
+        { hex: '#00FF00', name: 'Green' },
+        { hex: '#0000FF', name: 'Blue' },
+        { hex: '#4B0082', name: 'Indigo' },
+        { hex: '#9400D3', name: 'Violet' },
+        { hex: '#000000', name: 'Black' },
+        { hex: '#FFFFFF', name: 'White', border: true },
+        { hex: '#8B4513', name: 'Brown' },
+        { hex: '#FFC0CB', name: 'Pink' },
+        { hex: '#A52A2A', name: 'Dark Brown' },
+        { hex: '#00FFFF', name: 'Cyan' },
+        { hex: '#FF69B4', name: 'Hot Pink' },
+        { hex: '#FFD700', name: 'Gold' },
+        { hex: '#808080', name: 'Grey' },
+        { hex: '#006400', name: 'Dark Green' },
+        { hex: '#DC143C', name: 'Crimson' },
+        { hex: '#4169E1', name: 'Royal Blue' },
+        { hex: '#FF4500', name: 'Orange Red' },
+        { hex: '#2E8B57', name: 'Sea Green' },
+        { hex: '#DA70D6', name: 'Orchid' },
+        { hex: '#87CEEB', name: 'Sky Blue' },
+        { hex: '#F0E68C', name: 'Khaki' }
+    ];
+
+    static PALETTE_PAGE_SIZE = 12;
+
     static getCanvasControlsHTML() {
+        const colors = ActivityManager.PALETTE_COLORS.slice(0, ActivityManager.PALETTE_PAGE_SIZE);
+        const colorsHTML = colors.map((c, i) => {
+            const border = c.border ? ' border-color: #dee2e6;' : '';
+            const active = i === 0 ? ' active' : '';
+            return `<div class="color-btn${active}" data-color="${c.hex}" style="background: ${c.hex};${border}" title="${c.name}"></div>`;
+        }).join('\n                        ');
+
         return `
-                    <!-- Color Palette -->
-                    <div class="color-palette" id="colorPalette">
-                        <div class="color-btn active" data-color="#FF0000" style="background: #FF0000;" title="Red"></div>
-                        <div class="color-btn" data-color="#FF7F00" style="background: #FF7F00;" title="Orange"></div>
-                        <div class="color-btn" data-color="#FFFF00" style="background: #FFFF00;" title="Yellow"></div>
-                        <div class="color-btn" data-color="#00FF00" style="background: #00FF00;" title="Green"></div>
-                        <div class="color-btn" data-color="#0000FF" style="background: #0000FF;" title="Blue"></div>
-                        <div class="color-btn" data-color="#4B0082" style="background: #4B0082;" title="Indigo"></div>
-                        <div class="color-btn" data-color="#9400D3" style="background: #9400D3;" title="Violet"></div>
-                        <div class="color-btn" data-color="#000000" style="background: #000000;" title="Black"></div>
-                        <div class="color-btn" data-color="#FFFFFF" style="background: #FFFFFF; border-color: #dee2e6;" title="White"></div>
-                        <div class="color-btn" data-color="#8B4513" style="background: #8B4513;" title="Brown"></div>
-                        <div class="color-btn" data-color="#FFC0CB" style="background: #FFC0CB;" title="Pink"></div>
-                        <div class="color-btn" data-color="#A52A2A" style="background: #A52A2A;" title="Dark Brown"></div>
+                    <!-- Colour Palette with Pagination -->
+                    <div class="color-palette-wrapper">
+                        <button class="palette-arrow palette-prev" id="palettePrev" title="Previous colours">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <div class="color-palette" id="colorPalette">
+                            ${colorsHTML}
+                        </div>
+                        <button class="palette-arrow palette-next" id="paletteNext" title="Next colours">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
                     </div>
 
                     <!-- Brush Sizes -->
@@ -509,6 +542,11 @@ class ActivityManager {
 
         // Start the activity-specific logic
         await this.startActivityLogic(activityName);
+
+        // Dino welcomes the user and explains what to do
+        if (window.DinoVoice && !AppState.isMuted) {
+            window.DinoVoice.speakPhrase('activity_welcome', activityName, null, true);
+        }
     }
 
     async stop() {
@@ -524,16 +562,21 @@ class ActivityManager {
 
         // Return to main menu
         this.navigation.showMainMenu();
+
+        // Refresh rewards display on home screen
+        if (window.rewardsManager) {
+            await window.rewardsManager.loadProgress();
+            window.rewardsManager.renderHomeStarDisplay();
+        }
+
+        // Dino welcomes back to the menu
+        if (window.DinoVoice && !AppState.isMuted) {
+            window.DinoVoice.speakPhrase('menu_welcome', null, null, true);
+        }
     }
 
     async startActivityLogic(activityName) {
         switch (activityName) {
-            case 'letters_numbers':
-                if (typeof LettersNumbersActivity !== 'undefined') {
-                    this.currentActivityInstance = new LettersNumbersActivity();
-                    await this.currentActivityInstance.start();
-                }
-                break;
             case 'drawing':
                 if (typeof DrawingActivity !== 'undefined') {
                     this.currentActivityInstance = new DrawingActivity();
@@ -570,6 +613,24 @@ class ActivityManager {
                     await this.currentActivityInstance.start();
                 }
                 break;
+            case 'memory_game':
+                if (typeof MemoryGameActivity !== 'undefined') {
+                    this.currentActivityInstance = new MemoryGameActivity();
+                    await this.currentActivityInstance.start();
+                }
+                break;
+            case 'jigsaw':
+                if (typeof JigsawActivity !== 'undefined') {
+                    this.currentActivityInstance = new JigsawActivity();
+                    await this.currentActivityInstance.start();
+                }
+                break;
+            case 'sorting':
+                if (typeof SortingActivity !== 'undefined') {
+                    this.currentActivityInstance = new SortingActivity();
+                    await this.currentActivityInstance.start();
+                }
+                break;
             default:
                 console.log('No logic implemented for this activity yet');
         }
@@ -579,9 +640,6 @@ class ActivityManager {
         let content = '';
 
         switch (activityName) {
-            case 'letters_numbers':
-                content = this.getLettersNumbersContent();
-                break;
             case 'drawing':
                 content = this.getDrawingContent();
                 break;
@@ -600,36 +658,20 @@ class ActivityManager {
             case 'typing_game':
                 content = this.getTypingGameContent();
                 break;
+            case 'memory_game':
+                content = this.getMemoryGameContent();
+                break;
+            case 'jigsaw':
+                content = this.getJigsawContent();
+                break;
+            case 'sorting':
+                content = this.getSortingContent();
+                break;
             default:
                 content = '<h2>Activity not found</h2>';
         }
 
         this.navigation.setActivityContent(content);
-    }
-
-    getLettersNumbersContent() {
-        return `
-            <div class="activity-container letters-numbers-activity">
-                <!-- Progress Display -->
-                <div id="progressDisplay" class="progress-display-top"></div>
-
-                <!-- Instruction Text -->
-                <p id="letterNumberInstruction" class="instruction-text">
-                    Press the letter on the keyboard!
-                </p>
-
-                <!-- Main Character Display -->
-                <div id="letterNumberDisplay" class="letter-number-display is-letter">
-                    A
-                </div>
-
-                <!-- Star Animation Container -->
-                <div id="starAnimation" class="star-animation-container"></div>
-
-                <!-- Level Up Notification -->
-                <div id="levelUpNotification" class="level-up-notification" style="display: none;"></div>
-            </div>
-        `;
     }
 
     getDrawingContent() {
@@ -661,15 +703,21 @@ class ActivityManager {
     getColorsShapesContent() {
         return `
             <div class="activity-container colors-shapes-activity">
+                <!-- Progress Display -->
+                <div id="csProgressDisplay" class="progress-display-top"></div>
+
                 <!-- Instruction Text -->
                 <p id="shapeInstruction" class="instruction-text">
-                    Click the shape!
+                    Tap the shape!
                 </p>
 
                 <!-- Shape Options Grid -->
                 <div id="shapeOptions" class="shape-options-grid">
                     <!-- Options will be generated here -->
                 </div>
+
+                <!-- Star Animation Container -->
+                <div id="csStarAnimation" class="star-animation-container"></div>
             </div>
         `;
     }
@@ -715,15 +763,18 @@ class ActivityManager {
     getSoundsContent() {
         return `
             <div class="activity-container colors-shapes-activity">
+                <!-- Progress Display -->
+                <div id="soundsProgressDisplay" class="progress-display-top"></div>
+
                 <!-- Title and Counter -->
-                <h2 class="display-5 fw-bold mb-3">Letter Sounds</h2>
-                <div class="progress-display-top">
-                    <span id="soundCounter">1 / 8</span>
+                <h2 class="display-5 fw-bold mb-2">Sound Quiz</h2>
+                <div class="mb-2">
+                    <span id="soundCounter" style="font-weight: 700; color: var(--text-secondary);">Round 1</span>
                 </div>
 
                 <!-- Instruction Text -->
                 <p id="soundDescription" class="instruction-text">
-                    Click the speaker to hear the sound!
+                    Which word has this sound?
                 </p>
 
                 <!-- Main Sound Display -->
@@ -731,23 +782,20 @@ class ActivityManager {
                     SH
                 </div>
 
-                <!-- Example Words -->
-                <div id="soundExamples" class="shape-options-grid" style="grid-template-columns: repeat(3, 1fr); max-width: 600px; margin: 2rem auto;">
-                    <!-- Example buttons will be generated here -->
+                <!-- Quiz Word Options -->
+                <div id="soundQuizOptions" class="sounds-quiz-options">
+                    <!-- Word buttons generated by JS -->
                 </div>
 
-                <!-- Navigation Controls -->
-                <div class="drawing-controls" style="justify-content: center; gap: 1rem;">
-                    <button class="btn btn-secondary btn-lg" id="prevSound">
-                        <i class="bi bi-arrow-left"></i> Previous
-                    </button>
+                <!-- Hear Again Button -->
+                <div style="text-align: center; margin-top: 0.5rem;">
                     <button class="btn btn-success btn-lg" id="hearSound">
-                        <i class="bi bi-volume-up-fill"></i> Hear Sound
-                    </button>
-                    <button class="btn btn-secondary btn-lg" id="nextSound">
-                        <i class="bi bi-arrow-right"></i> Next
+                        <i class="bi bi-volume-up-fill"></i> Hear Again
                     </button>
                 </div>
+
+                <!-- Star Animation Container -->
+                <div id="soundsStarAnimation" class="star-animation-container"></div>
             </div>
         `;
     }
@@ -757,7 +805,7 @@ class ActivityManager {
         return `
             <div class="activity-container drawing-activity">
                 <!-- Title and Counter -->
-                <h2 class="display-5 fw-bold mb-2" id="coloringTitle">Coloring</h2>
+                <h2 class="display-5 fw-bold mb-2" id="coloringTitle">Colouring</h2>
                 <div class="progress-display-top mb-2">
                     <span id="coloringCounter">1 / 6</span>
                 </div>
@@ -877,6 +925,110 @@ class ActivityManager {
 
                 <!-- Level Up Notification -->
                 <div id="typingLevelUp" class="level-up-notification" style="display: none;"></div>
+            </div>
+        `;
+    }
+
+    getMemoryGameContent() {
+        return `
+            <div class="activity-container memory-game-activity">
+                <!-- Progress Display -->
+                <div id="memoryProgressDisplay" class="progress-display-top"></div>
+
+                <!-- Title -->
+                <h2 class="display-5 fw-bold mb-2">Memory Game</h2>
+
+                <!-- Difficulty Selector -->
+                <div class="difficulty-selector" id="memoryDifficulty">
+                    <button class="difficulty-btn active" data-difficulty="easy">Easy</button>
+                    <button class="difficulty-btn" data-difficulty="medium">Medium</button>
+                    <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+                </div>
+
+                <!-- Card Grid -->
+                <div id="memoryGrid" class="memory-grid">
+                    <!-- Cards generated by JS -->
+                </div>
+
+                <!-- Star Animation Container -->
+                <div id="memoryStarAnimation" class="star-animation-container"></div>
+
+                <!-- Level Up Notification -->
+                <div id="memoryLevelUp" class="level-up-notification" style="display: none;"></div>
+            </div>
+        `;
+    }
+
+    getJigsawContent() {
+        return `
+            <div class="activity-container jigsaw-activity">
+                <!-- Progress Display -->
+                <div id="jigsawProgressDisplay" class="progress-display-top"></div>
+
+                <!-- Title -->
+                <h2 class="display-5 fw-bold mb-2" id="jigsawTitle">Jigsaw Puzzle</h2>
+
+                <!-- Difficulty Selector -->
+                <div class="difficulty-selector" id="jigsawDifficulty">
+                    <button class="difficulty-btn active" data-difficulty="easy">Easy (4 pcs)</button>
+                    <button class="difficulty-btn" data-difficulty="medium">Medium (6 pcs)</button>
+                    <button class="difficulty-btn" data-difficulty="hard">Hard (9 pcs)</button>
+                </div>
+
+                <!-- Reference Image -->
+                <div id="jigsawReference" class="jigsaw-reference">
+                    <img id="jigsawRefImg" src="" alt="Reference">
+                </div>
+
+                <!-- Puzzle Area -->
+                <div id="jigsawBoard" class="jigsaw-board">
+                    <!-- Pieces generated by JS -->
+                </div>
+
+                <!-- Star Animation Container -->
+                <div id="jigsawStarAnimation" class="star-animation-container"></div>
+
+                <!-- Level Up Notification -->
+                <div id="jigsawLevelUp" class="level-up-notification" style="display: none;"></div>
+            </div>
+        `;
+    }
+
+    getSortingContent() {
+        return `
+            <div class="activity-container sorting-activity">
+                <!-- Progress Display -->
+                <div id="sortingProgressDisplay" class="progress-display-top"></div>
+
+                <!-- Title -->
+                <h2 class="display-5 fw-bold mb-2">Sorting Game</h2>
+
+                <!-- Category Selector -->
+                <div class="difficulty-selector" id="sortingCategory">
+                    <button class="difficulty-btn active" data-category="colours">Colours</button>
+                    <button class="difficulty-btn" data-category="animals">Animals</button>
+                    <button class="difficulty-btn" data-category="size">Size</button>
+                    <button class="difficulty-btn" data-category="food">Food</button>
+                </div>
+
+                <!-- Item to Sort -->
+                <div id="sortingItem" class="sorting-item">
+                    <!-- Current item appears here -->
+                </div>
+
+                <!-- Sorting Baskets -->
+                <div id="sortingBaskets" class="sorting-baskets">
+                    <!-- Two baskets generated by JS -->
+                </div>
+
+                <!-- Score Display -->
+                <div id="sortingScore" class="sorting-score"></div>
+
+                <!-- Star Animation Container -->
+                <div id="sortingStarAnimation" class="star-animation-container"></div>
+
+                <!-- Level Up Notification -->
+                <div id="sortingLevelUp" class="level-up-notification" style="display: none;"></div>
             </div>
         `;
     }
@@ -1003,6 +1155,26 @@ async function initApp() {
         window.characterManager = characterManager;
     }
 
+    // Click on dinosaur to hear a random phrase
+    if (characterContainer) {
+        characterContainer.style.cursor = 'pointer';
+        characterContainer.addEventListener('click', () => {
+            if (window.DinoVoice && !AppState.isMuted) {
+                window.DinoVoice.speakPhrase('dino_click', null, null, true);
+                if (characterManager && characterManager.playAnimation) {
+                    characterManager.playAnimation('happy');
+                }
+            }
+        });
+    }
+
+    // Load rewards and display on home screen
+    if (typeof RewardsManager !== 'undefined') {
+        window.rewardsManager = new RewardsManager();
+        await window.rewardsManager.loadProgress();
+        window.rewardsManager.renderHomeStarDisplay();
+    }
+
     // Load version from backend
     const versionLabel = document.getElementById('versionLabel');
     if (versionLabel) {
@@ -1018,6 +1190,13 @@ async function initApp() {
         if (settings.theme) {
             themeManager.setTheme(settings.theme);
         }
+    }
+
+    // Dino greets the user on startup
+    if (window.DinoVoice && !AppState.isMuted) {
+        setTimeout(() => {
+            window.DinoVoice.speakPhrase('greeting', null, null, true);
+        }, 2000);
     }
 
     console.log('Application initialized successfully');
