@@ -1,6 +1,6 @@
 /**
- * Download Piper TTS model for dinosaur voice
- * Downloads en_US-joe-medium model from sherpa-onnx GitHub releases
+ * Download PocketTTS voice cloning model for dinosaur voice
+ * Downloads sherpa-onnx-pocket-tts-int8 from sherpa-onnx GitHub releases
  *
  * Usage: node scripts/download-tts-model.js
  */
@@ -11,15 +11,28 @@ const { execSync } = require('child_process');
 const { Readable } = require('stream');
 const { pipeline } = require('stream/promises');
 
-const MODEL_URL = 'https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-joe-medium.tar.bz2';
+const MODEL_URL = 'https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-pocket-tts-int8-2026-01-26.tar.bz2';
 const MODEL_DIR = path.join(__dirname, '..', 'resources', 'tts-model');
-const ARCHIVE_NAME = 'vits-piper-en_US-joe-medium.tar.bz2';
+const ARCHIVE_NAME = 'sherpa-onnx-pocket-tts-int8-2026-01-26.tar.bz2';
+
+// PocketTTS INT8 model files
+const REQUIRED_FILES = [
+  'lm_flow.int8.onnx',
+  'lm_main.int8.onnx',
+  'encoder.onnx',
+  'decoder.int8.onnx',
+  'text_conditioner.onnx',
+  'vocab.json',
+  'token_scores.json',
+];
 
 async function downloadModel() {
   // Check if model already exists
-  const modelFile = path.join(MODEL_DIR, 'en_US-joe-medium.onnx');
-  if (fs.existsSync(modelFile)) {
-    console.log('[setup:tts] Model already downloaded, skipping.');
+  const allPresent = REQUIRED_FILES.every(f =>
+    fs.existsSync(path.join(MODEL_DIR, f))
+  );
+  if (allPresent) {
+    console.log('[setup:tts] PocketTTS model already downloaded, skipping.');
     return;
   }
 
@@ -29,9 +42,9 @@ async function downloadModel() {
   const archivePath = path.join(MODEL_DIR, ARCHIVE_NAME);
 
   // Download
-  console.log('[setup:tts] Downloading Piper TTS model (en_US-joe-medium)...');
+  console.log('[setup:tts] Downloading PocketTTS INT8 model...');
   console.log(`[setup:tts] URL: ${MODEL_URL}`);
-  console.log('[setup:tts] This may take a few minutes (~63MB)...');
+  console.log('[setup:tts] This may take a few minutes (~93MB)...');
 
   const response = await fetch(MODEL_URL, { redirect: 'follow' });
   if (!response.ok) {
@@ -75,17 +88,14 @@ async function downloadModel() {
   fs.unlinkSync(archivePath);
 
   // Verify extraction
-  if (!fs.existsSync(modelFile)) {
-    throw new Error('Extraction failed: model .onnx file not found');
-  }
-  if (!fs.existsSync(path.join(MODEL_DIR, 'tokens.txt'))) {
-    throw new Error('Extraction failed: tokens.txt not found');
-  }
-  if (!fs.existsSync(path.join(MODEL_DIR, 'espeak-ng-data'))) {
-    throw new Error('Extraction failed: espeak-ng-data directory not found');
+  const missing = REQUIRED_FILES.filter(f =>
+    !fs.existsSync(path.join(MODEL_DIR, f))
+  );
+  if (missing.length > 0) {
+    throw new Error(`Extraction failed: missing files: ${missing.join(', ')}`);
   }
 
-  console.log('[setup:tts] Piper TTS model ready at resources/tts-model/');
+  console.log('[setup:tts] PocketTTS model ready at resources/tts-model/');
 }
 
 downloadModel().catch(err => {
