@@ -1,6 +1,6 @@
 /**
- * Sounds Activity - Learn phonics and letter sounds
- * Teaches digraphs and common letter combinations
+ * Sounds Activity - Interactive phonics quiz
+ * Child hears a sound, then picks the word that contains it from 3 options
  */
 
 class SoundsActivity {
@@ -15,120 +15,122 @@ class SoundsActivity {
             { sound: 'ng', examples: ['sing', 'ring', 'long'], description: 'NG like in Sing' },
             { sound: 'qu', examples: ['queen', 'quick', 'quiet'], description: 'QU like in Queen' }
         ];
+
+        // Distractor words that don't contain any of the digraph sounds
+        this.distractors = [
+            'cat', 'dog', 'big', 'run', 'hop', 'red', 'cup', 'map',
+            'bat', 'sun', 'hat', 'pig', 'bed', 'pot', 'leg', 'bus',
+            'jam', 'van', 'mop', 'rug', 'pin', 'log', 'web', 'fox'
+        ];
+
         this.currentIndex = 0;
-        this.currentExampleIndex = 0;
+        this.correctWord = null;
+        this.processing = false;
+        this.rewards = null;
+        this.roundCount = 0;
     }
 
     async start() {
-        console.log('Starting Sounds activity');
+        console.log('Starting Sounds quiz activity');
 
-        // Display first sound
-        this.showSound();
+        // Set up rewards
+        if (typeof RewardsManager !== 'undefined') {
+            this.rewards = new RewardsManager();
+            await this.rewards.loadProgress();
+            this.rewards.renderProgressPanel('soundsProgressDisplay', 'sounds');
+        }
 
-        // Set up navigation buttons
-        this.setupNavigation();
+        // Set up keyboard handler and hear again button
+        this.keyPressHandler = this.handleKeyPress.bind(this);
+        document.addEventListener('keydown', this.keyPressHandler);
 
-        // Speak welcome message
-        const welcomeText = window.DinoPhrase ? window.DinoPhrase('sounds', 'welcome') : "Let's learn letter sounds!";
-        AppAPI.call('speak', welcomeText);
+        const hearBtn = document.getElementById('hearSound');
+        if (hearBtn) {
+            hearBtn.addEventListener('click', () => this.speakSound());
+        }
 
         // Character wave
         if (window.characterManager) {
             window.characterManager.playAnimation('wave', false);
         }
+
+        // Speak welcome
+        const welcomeText = window.DinoPhrase ? window.DinoPhrase('sounds', 'welcome') : "Let's learn letter sounds!";
+        AppAPI.call('speak', welcomeText);
+
+        // Start first round
+        this.nextRound();
     }
 
-    showSound() {
-        const soundDisplay = document.getElementById('soundDisplay');
-        const description = document.getElementById('soundDescription');
-        const examples = document.getElementById('soundExamples');
-        const counter = document.getElementById('soundCounter');
+    nextRound() {
+        // Pick a random sound
+        this.currentIndex = Math.floor(Math.random() * this.sounds.length);
+        this.generateQuizRound();
+    }
 
-        if (!soundDisplay || !description || !examples) return;
-
+    generateQuizRound() {
         const currentSound = this.sounds[this.currentIndex];
 
-        // Display the sound
-        soundDisplay.textContent = currentSound.sound.toUpperCase();
-        description.textContent = currentSound.description;
+        // Pick one correct example
+        this.correctWord = currentSound.examples[Math.floor(Math.random() * currentSound.examples.length)];
 
-        // Display examples as clickable buttons
-        examples.innerHTML = currentSound.examples.map((example, index) => `
-            <button class="sound-example-btn ${index === this.currentExampleIndex ? 'active' : ''}"
-                    data-index="${index}"
-                    onclick="window.currentSoundsActivity.speakExample(${index})">
-                ${example}
-            </button>
-        `).join('');
+        // Pick 2 distractors that don't contain the target sound
+        const validDistractors = this.distractors.filter(w =>
+            !currentSound.examples.includes(w) &&
+            !w.includes(currentSound.sound)
+        );
+        const shuffled = validDistractors.sort(() => Math.random() - 0.5);
+        const chosen = shuffled.slice(0, 2);
 
-        if (counter) {
-            counter.textContent = `${this.currentIndex + 1} / ${this.sounds.length}`;
-        }
+        // Build options array and shuffle
+        this.options = [this.correctWord, ...chosen].sort(() => Math.random() - 0.5);
 
-        // Automatically speak the sound when shown
+        this.renderQuiz();
         this.speakSound();
-
-        // Update button states
-        this.updateButtons();
     }
 
-    setupNavigation() {
-        const prevBtn = document.getElementById('prevSound');
-        const nextBtn = document.getElementById('nextSound');
-        const hearBtn = document.getElementById('hearSound');
+    renderQuiz() {
+        const currentSound = this.sounds[this.currentIndex];
 
-        if (prevBtn) {
-            prevBtn.addEventListener('click', () => this.previousSound());
+        // Update sound display
+        const soundDisplay = document.getElementById('soundDisplay');
+        if (soundDisplay) {
+            soundDisplay.textContent = currentSound.sound.toUpperCase();
+            soundDisplay.className = 'letter-number-display is-letter';
+            soundDisplay.style.fontSize = 'clamp(5rem, 12vw, 10rem)';
+            soundDisplay.style.animation = 'bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
         }
 
-        if (nextBtn) {
-            nextBtn.addEventListener('click', () => this.nextSound());
+        // Update description
+        const description = document.getElementById('soundDescription');
+        if (description) {
+            description.textContent = `Which word has the "${currentSound.sound.toUpperCase()}" sound?`;
         }
 
-        if (hearBtn) {
-            hearBtn.addEventListener('click', () => this.speakSound());
+        // Update counter
+        const counter = document.getElementById('soundCounter');
+        if (counter) {
+            this.roundCount++;
+            counter.textContent = `Round ${this.roundCount}`;
         }
 
-        // Keyboard navigation - store bound handler for later removal
-        this.keyPressHandler = this.handleKeyPress.bind(this);
-        document.addEventListener('keydown', this.keyPressHandler);
+        // Render word options
+        const optionsContainer = document.getElementById('soundQuizOptions');
+        if (optionsContainer) {
+            optionsContainer.innerHTML = this.options.map((word, i) =>
+                `<button class="quiz-word-btn" data-index="${i}" data-word="${word}">${word}</button>`
+            ).join('');
 
-        // Store reference to this instance
-        window.currentSoundsActivity = this;
+            optionsContainer.querySelectorAll('.quiz-word-btn').forEach(btn => {
+                btn.addEventListener('click', () => this.handleAnswer(btn));
+            });
+        }
     }
 
     handleKeyPress(e) {
-        if (e.key === 'ArrowLeft') {
-            this.previousSound();
-        } else if (e.key === 'ArrowRight') {
-            this.nextSound();
-        } else if (e.key === ' ' || e.key === 'Enter') {
+        if (e.key === ' ' || e.key === 'Enter') {
             e.preventDefault();
             this.speakSound();
-        }
-    }
-
-    previousSound() {
-        if (this.currentIndex > 0) {
-            this.currentIndex--;
-            this.currentExampleIndex = 0;
-            this.showSound();
-
-            if (window.characterManager) {
-                window.characterManager.playAnimation('point', false);
-            }
-        }
-    }
-
-    nextSound() {
-        if (this.currentIndex < this.sounds.length - 1) {
-            this.currentIndex++;
-            this.currentExampleIndex = 0;
-            this.showSound();
-
-            if (window.characterManager) {
-                window.characterManager.playAnimation('point', false);
-            }
         }
     }
 
@@ -146,45 +148,61 @@ class SoundsActivity {
         }
     }
 
-    speakExample(index) {
-        this.currentExampleIndex = index;
-        const currentSound = this.sounds[this.currentIndex];
-        const example = currentSound.examples[index];
+    async handleAnswer(btn) {
+        if (this.processing) return;
+        this.processing = true;
 
-        AppAPI.call('speak', example);
+        const word = btn.dataset.word;
 
-        // Update active state
-        document.querySelectorAll('.sound-example-btn').forEach((btn, i) => {
-            if (i === index) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
+        if (word === this.correctWord) {
+            // Correct!
+            btn.classList.add('correct');
+
+            if (window.characterManager) {
+                window.characterManager.playAnimation('happy', false);
             }
-        });
 
-        if (window.characterManager) {
-            window.characterManager.playAnimation('happy', false);
-        }
-    }
+            // Award star
+            const starResult = await AppAPI.call('award_stars', 'sounds', 1);
+            if (starResult && this.rewards) {
+                this.rewards.playStarAnimation('soundsStarAnimation');
+                this.rewards.updateStarCount(starResult.total_stars);
+                const milestones = await this.rewards.checkMilestones(starResult.total_stars);
+                milestones.forEach(r => this.rewards.showRewardAnimation(r));
+            }
 
-    updateButtons() {
-        const prevBtn = document.getElementById('prevSound');
-        const nextBtn = document.getElementById('nextSound');
+            const correctText = window.DinoPhrase ? window.DinoPhrase('correct_first_try') : 'Great job!';
+            await AppAPI.call('speak', correctText);
 
-        if (prevBtn) {
-            prevBtn.disabled = this.currentIndex === 0;
-        }
+            // Next round after delay
+            setTimeout(() => {
+                this.processing = false;
+                this.nextRound();
+            }, 1500);
 
-        if (nextBtn) {
-            nextBtn.disabled = this.currentIndex === this.sounds.length - 1;
+        } else {
+            // Wrong
+            btn.classList.add('wrong');
+
+            if (window.characterManager) {
+                window.characterManager.playAnimation('thinking', false);
+            }
+
+            const wrongText = window.DinoPhrase ? window.DinoPhrase('wrong_key') : 'Try again!';
+            await AppAPI.call('speak', wrongText);
+
+            // Remove wrong class and unlock
+            setTimeout(() => {
+                btn.classList.remove('wrong');
+                this.processing = false;
+            }, 500);
         }
     }
 
     stop() {
-        console.log('Stopping Sounds activity');
+        console.log('Stopping Sounds quiz activity');
         if (this.keyPressHandler) {
             document.removeEventListener('keydown', this.keyPressHandler);
         }
-        window.currentSoundsActivity = null;
     }
 }

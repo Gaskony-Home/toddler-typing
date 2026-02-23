@@ -22,6 +22,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getProgress: () => ipcRenderer.invoke('get-progress'),
   awardStars: (activity, count) => ipcRenderer.invoke('award-stars', activity, count),
 
+  // Stickers & Accessories
+  awardSticker: (stickerId) => ipcRenderer.invoke('award-sticker', stickerId),
+  unlockAccessory: (accessoryId) => ipcRenderer.invoke('unlock-accessory', accessoryId),
+  setOutfit: (slot, itemId) => ipcRenderer.invoke('set-outfit', slot, itemId),
+
   // System
   getVersion: () => ipcRenderer.invoke('get-version'),
   getSystemInfo: () => ipcRenderer.invoke('get-system-info'),

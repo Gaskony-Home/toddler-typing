@@ -24,10 +24,19 @@ class ColorsShapesActivity {
         this.targetIndex = null;
         this.options = [];
         this.isWaiting = false;
+        this.rewards = null;
     }
 
     async start() {
-        console.log('Starting Colors & Shapes activity');
+        console.log('Starting Colours & Shapes activity');
+
+        // Set up rewards
+        if (typeof RewardsManager !== 'undefined') {
+            this.rewards = new RewardsManager();
+            await this.rewards.loadProgress();
+            this.rewards.renderProgressPanel('csProgressDisplay', 'colors_shapes');
+        }
+
         await this.nextRound();
     }
 
@@ -120,13 +129,13 @@ class ColorsShapesActivity {
             });
         }
         if (!text) {
-            text = `Click the ${target.color.name} ${target.shape.name}`;
+            text = `Tap the ${target.color.name} ${target.shape.name}`;
         }
 
         // Update instruction text
         const instructionEl = document.getElementById('shapeInstruction');
         if (instructionEl) {
-            instructionEl.textContent = `Click the ${target.color.name} ${target.shape.name}`;
+            instructionEl.textContent = `Tap the ${target.color.name} ${target.shape.name}`;
         }
 
         await AppAPI.call('speak', text);
@@ -147,6 +156,15 @@ class ColorsShapesActivity {
                 window.characterManager.playAnimation('happy', false);
             }
 
+            // Award star
+            const starResult = await AppAPI.call('award_stars', 'colors_shapes', 1);
+            if (starResult && this.rewards) {
+                this.rewards.playStarAnimation('csStarAnimation');
+                this.rewards.updateStarCount(starResult.total_stars);
+                const milestones = await this.rewards.checkMilestones(starResult.total_stars);
+                milestones.forEach(r => this.rewards.showRewardAnimation(r));
+            }
+
             // Play success sound/animation
             const correctText = window.DinoPhrase ? window.DinoPhrase('colors_shapes', 'correct') : 'Great job!';
             await AppAPI.call('speak', correctText);
@@ -158,7 +176,8 @@ class ColorsShapesActivity {
             }, 1500);
 
         } else {
-            // Wrong
+            // Wrong — lock input briefly
+            this.isWaiting = true;
             clickedOption.classList.add('wrong');
 
             // Character thinking/curious
@@ -170,10 +189,11 @@ class ColorsShapesActivity {
             const wrongText = window.DinoPhrase ? window.DinoPhrase('colors_shapes', 'wrong') : 'Try again!';
             await AppAPI.call('speak', wrongText);
 
-            // Remove wrong class after animation
+            // Remove wrong class after animation and unlock
             setTimeout(() => {
                 clickedOption.classList.remove('wrong');
-            }, 400);
+                this.isWaiting = false;
+            }, 500);
 
             // Repeat the instruction
             setTimeout(() => {

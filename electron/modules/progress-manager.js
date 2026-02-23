@@ -22,8 +22,17 @@ const progressSchema = {
         coloring: 0,
         dot2dot: 0,
         sounds: 0,
-        typing_game: 0
+        typing_game: 0,
+        memory_game: 0,
+        jigsaw: 0,
+        sorting: 0
       }
+    },
+    stickers_collected: { type: 'array', default: [] },
+    dino_accessories_unlocked: { type: 'array', default: [] },
+    dino_current_outfit: {
+      type: 'object',
+      default: { hat: null, accessory: null }
     },
     last_updated: { type: 'string', default: '' }
   }
@@ -41,8 +50,12 @@ class ProgressManager {
     this.currentLevel = this.store.get('current_level');
     this.starsByActivity = this.store.get('stars_by_activity');
 
+    this.stickersCollected = this.store.get('stickers_collected') || [];
+    this.accessoriesUnlocked = this.store.get('dino_accessories_unlocked') || [];
+    this.currentOutfit = this.store.get('dino_current_outfit') || { hat: null, accessory: null };
+
     // Ensure all activity keys exist
-    const defaultActivities = ['letters_numbers', 'drawing', 'colors_shapes', 'coloring', 'dot2dot', 'sounds', 'typing_game'];
+    const defaultActivities = ['letters_numbers', 'drawing', 'colors_shapes', 'coloring', 'dot2dot', 'sounds', 'typing_game', 'memory_game', 'jigsaw', 'sorting'];
     for (const activity of defaultActivities) {
       if (!(activity in this.starsByActivity)) {
         this.starsByActivity[activity] = 0;
@@ -73,6 +86,9 @@ class ProgressManager {
     this.store.set('total_stars', this.totalStars);
     this.store.set('current_level', this.currentLevel);
     this.store.set('stars_by_activity', this.starsByActivity);
+    this.store.set('stickers_collected', this.stickersCollected);
+    this.store.set('dino_accessories_unlocked', this.accessoriesUnlocked);
+    this.store.set('dino_current_outfit', this.currentOutfit);
     this.store.set('last_updated', new Date().toISOString());
   }
 
@@ -107,6 +123,27 @@ class ProgressManager {
     return { levelUp: this.currentLevel > previousLevel };
   }
 
+  awardSticker(stickerId) {
+    if (this.stickersCollected.includes(stickerId)) return false;
+    this.stickersCollected.push(stickerId);
+    this._save();
+    return true;
+  }
+
+  unlockAccessory(accessoryId) {
+    if (this.accessoriesUnlocked.includes(accessoryId)) return false;
+    this.accessoriesUnlocked.push(accessoryId);
+    this._save();
+    return true;
+  }
+
+  setOutfit(slot, itemId) {
+    if (slot !== 'hat' && slot !== 'accessory') return false;
+    this.currentOutfit[slot] = itemId;
+    this._save();
+    return true;
+  }
+
   getProgressSummary() {
     const currentThreshold = LEVEL_THRESHOLDS[this.currentLevel] || 0;
     const nextLevel = this.currentLevel + 1;
@@ -127,6 +164,9 @@ class ProgressManager {
       stars_in_level: starsInLevel,
       stars_needed_for_next: starsNeeded,
       stars_by_activity: { ...this.starsByActivity },
+      stickers_collected: [...this.stickersCollected],
+      dino_accessories_unlocked: [...this.accessoriesUnlocked],
+      dino_current_outfit: { ...this.currentOutfit },
       last_updated: this.store.get('last_updated')
     };
   }
