@@ -32,5 +32,15 @@ android/.idea/
 # TTS model files (downloaded via npm run setup:tts)
 resources/tts-model/
 
+# Build output
+release/
+
+# Voice cloning workspace (OpenVoice, models, generated samples)
+tmp/
+
+# Source recordings and images (not for distribution)
+Dinosaur Audio/
+Dinosaur Images/
+
 # Claude Code
 .claude/

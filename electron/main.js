@@ -48,7 +48,7 @@ app.whenReady().then(() => {
   keyboardLocker = new KeyboardLocker();
   registerIpcHandlers(keyboardLocker);
 
-  // Initialize Piper TTS engine
+  // Initialize PocketTTS voice cloning engine
   ttsEngine = new TtsEngine();
 
   // TTS IPC handlers
@@ -83,7 +83,7 @@ app.whenReady().then(() => {
 
   // Warm up TTS engine in background to reduce first-utterance latency
   if (ttsEngine && ttsEngine.isAvailable()) {
-    setTimeout(() => ttsEngine.warmup(), 1000);
+    setTimeout(() => ttsEngine.warmup(), 2000);
   }
 
   // Initialize auto-updater after window is created
