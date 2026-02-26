@@ -4,7 +4,7 @@ const { SettingsManager } = require('./modules/settings-manager');
 
 // Security constants
 const MAX_KEY_LENGTH = 10;
-const VALID_ACTIVITIES = new Set(['letters_numbers', 'drawing', 'colors_shapes', 'coloring', 'dot2dot', 'sounds', 'typing_game', 'memory_game', 'jigsaw', 'sorting']);
+const VALID_ACTIVITIES = new Set(['letters_numbers', 'drawing', 'colors_shapes', 'coloring', 'dot2dot', 'sounds', 'typing_game', 'memory_game', 'jigsaw', 'sorting', 'trophy_room']);
 const VALID_THEMES = new Set(['light', 'dark']);
 const ALPHANUMERIC_RE = /^[a-zA-Z0-9]+$/;
 

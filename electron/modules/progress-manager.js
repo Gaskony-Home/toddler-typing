@@ -2,10 +2,14 @@ const { Conf } = require('electron-conf/main');
 
 // Level thresholds (inclusive lower bound)
 const LEVEL_THRESHOLDS = {
-  1: 0,     // Level 1: 0-50 stars
-  2: 51,    // Level 2: 51-150 stars
-  3: 151,   // Level 3: 151-300 stars
-  4: 301    // Level 4: 301+ stars
+  1: 0,     // Star Spotter
+  2: 25,    // Star Collector
+  3: 75,    // Star Explorer
+  4: 150,   // Star Champion
+  5: 250,   // Star Master
+  6: 400,   // Star Hero
+  7: 600,   // Star Legend
+  8: 900    // Superstar
 };
 
 const progressSchema = {
@@ -25,7 +29,8 @@ const progressSchema = {
         typing_game: 0,
         memory_game: 0,
         jigsaw: 0,
-        sorting: 0
+        sorting: 0,
+        trophy_room: 0
       }
     },
     stickers_collected: { type: 'array', default: [] },
@@ -55,7 +60,7 @@ class ProgressManager {
     this.currentOutfit = this.store.get('dino_current_outfit') || { hat: null, accessory: null };
 
     // Ensure all activity keys exist
-    const defaultActivities = ['letters_numbers', 'drawing', 'colors_shapes', 'coloring', 'dot2dot', 'sounds', 'typing_game', 'memory_game', 'jigsaw', 'sorting'];
+    const defaultActivities = ['letters_numbers', 'drawing', 'colors_shapes', 'coloring', 'dot2dot', 'sounds', 'typing_game', 'memory_game', 'jigsaw', 'sorting', 'trophy_room'];
     for (const activity of defaultActivities) {
       if (!(activity in this.starsByActivity)) {
         this.starsByActivity[activity] = 0;
