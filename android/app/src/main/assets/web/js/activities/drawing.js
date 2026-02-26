@@ -12,6 +12,8 @@ class DrawingActivity {
         this.lastX = 0;
         this.lastY = 0;
         this._resizeHandler = () => this.resizeCanvas();
+        this._lastEncouragementTime = 0;
+        this._encouragementInterval = null;
     }
 
     async start() {
@@ -30,8 +32,8 @@ class DrawingActivity {
         this.resizeCanvas();
         window.addEventListener('resize', this._resizeHandler);
 
-        // Initialize canvas
-        this.clearCanvas();
+        // Initialize canvas (silent — no voice on initial clear)
+        this.clearCanvas(true);
 
         // Set up event listeners
         this.setupColorPalette();
@@ -39,6 +41,21 @@ class DrawingActivity {
         this.setupClearButton();
         this.setupSaveButton();
         this.setupDrawingEvents();
+
+        // Periodic drawing encouragement (every 30s of active drawing)
+        this._encouragementInterval = setInterval(() => {
+            if (this.isDrawing || this._recentlyDrawn) {
+                const now = Date.now();
+                if (now - this._lastEncouragementTime >= 30000) {
+                    this._lastEncouragementTime = now;
+                    AppAPI.call('speak', window.DinoPhrase ? window.DinoPhrase('drawing', 'encouragement') : '');
+                    if (window.characterManager) {
+                        window.characterManager.playAnimation('happy', false);
+                    }
+                }
+                this._recentlyDrawn = false;
+            }
+        }, 5000);
     }
 
     resizeCanvas() {
@@ -123,10 +140,17 @@ class DrawingActivity {
         }
     }
 
-    clearCanvas() {
+    clearCanvas(silent) {
         if (this.ctx) {
             this.ctx.fillStyle = 'white';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+        if (!silent) {
+            const clearText = window.DinoPhrase ? window.DinoPhrase('drawing', 'clear') : '';
+            if (clearText) AppAPI.call('speak', clearText);
+            if (window.characterManager) {
+                window.characterManager.playAnimation('wave', false);
+            }
         }
     }
 
@@ -149,7 +173,8 @@ class DrawingActivity {
         if (window.characterManager) {
             window.characterManager.playAnimation('happy', false);
         }
-        AppAPI.call('speak', 'Drawing saved!');
+        const savedText = window.DinoPhrase ? window.DinoPhrase('drawing', 'saved') : 'Drawing saved!';
+        AppAPI.call('speak', savedText);
     }
 
     setupDrawingEvents() {
@@ -212,6 +237,7 @@ class DrawingActivity {
 
         this.lastX = currentX;
         this.lastY = currentY;
+        this._recentlyDrawn = true;
     }
 
     stopDrawing() {
@@ -220,6 +246,10 @@ class DrawingActivity {
 
     stop() {
         console.log('Stopping Drawing activity');
+        if (this._encouragementInterval) {
+            clearInterval(this._encouragementInterval);
+            this._encouragementInterval = null;
+        }
         window.removeEventListener('resize', this._resizeHandler);
     }
 }

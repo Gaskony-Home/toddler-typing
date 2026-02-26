@@ -69,15 +69,30 @@
     { id: 'acc_trophy', name: 'Trophy', slot: 'accessory', emoji: '\uD83C\uDFC6' }
   ];
 
-  // Every 5 stars = sticker, every 25 stars = accessory
-  const STICKER_INTERVAL = 5;
-  const ACCESSORY_INTERVAL = 25;
+  // Every 15 stars = sticker, every 50 stars = accessory
+  const STICKER_INTERVAL = 15;
+  const ACCESSORY_INTERVAL = 50;
 
   const LEVEL_NAMES = {
     1: 'Star Spotter',
     2: 'Star Collector',
-    3: 'Star Champion',
-    4: 'Superstar'
+    3: 'Star Explorer',
+    4: 'Star Champion',
+    5: 'Star Master',
+    6: 'Star Hero',
+    7: 'Star Legend',
+    8: 'Superstar'
+  };
+
+  const LEVEL_THRESHOLDS = {
+    1: 0,
+    2: 25,
+    3: 75,
+    4: 150,
+    5: 250,
+    6: 400,
+    7: 600,
+    8: 900
   };
 
   const STICKER_CATEGORIES = ['Animals', 'Nature', 'Space', 'Food', 'Dinos'];
@@ -104,7 +119,7 @@
     }
 
     getLevelName(level) {
-      return LEVEL_NAMES[level] || LEVEL_NAMES[4];
+      return LEVEL_NAMES[level] || LEVEL_NAMES[8];
     }
 
     async checkMilestones(newTotalStars) {
@@ -148,6 +163,10 @@
     }
 
     showRewardAnimation(reward) {
+      // Speak star_earned phrase
+      const starText = window.DinoPhrase ? window.DinoPhrase('star_earned') : '';
+      if (starText) AppAPI.call('speak', starText);
+
       const overlay = document.createElement('div');
       overlay.className = 'reward-overlay';
 
@@ -183,8 +202,6 @@
       if (!titleEl) return;
 
       const levelName = this.getLevelName(this.currentLevel);
-      const stickerTotal = STICKER_REGISTRY.length;
-      const stickerCount = this.collectedStickers.length;
 
       titleEl.innerHTML = `
         <div class="home-rewards-display">
@@ -193,19 +210,8 @@
             <span>${this.totalStars}</span>
           </div>
           <div class="home-level-badge">${levelName}</div>
-          <button class="home-sticker-count" id="openStickerAlbum">
-            <i class="bi bi-book"></i> ${stickerCount}/${stickerTotal} stickers
-          </button>
         </div>
       `;
-
-      const albumBtn = document.getElementById('openStickerAlbum');
-      if (albumBtn) {
-        albumBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          this.showStickerAlbum();
-        });
-      }
     }
 
     showStickerAlbum() {
@@ -269,6 +275,89 @@
       });
     }
 
+    renderTrophyRoom() {
+      const container = document.getElementById('trophyRoomContent');
+      if (!container) return;
+
+      const levelName = this.getLevelName(this.currentLevel);
+
+      // Progress to next level
+      const currentThreshold = LEVEL_THRESHOLDS[this.currentLevel] || 0;
+      const nextLevel = this.currentLevel + 1;
+      const nextThreshold = LEVEL_THRESHOLDS[nextLevel];
+      let progressPct = 100;
+      let progressLabel = 'Max level reached!';
+      if (nextThreshold !== undefined) {
+        const range = nextThreshold - currentThreshold;
+        const progress = this.totalStars - currentThreshold;
+        progressPct = Math.min(100, Math.round((progress / range) * 100));
+        progressLabel = `${this.totalStars} / ${nextThreshold} stars`;
+      }
+
+      // Milestones strip
+      const milestonesHTML = Object.entries(LEVEL_NAMES).map(([lvl, name]) => {
+        const threshold = LEVEL_THRESHOLDS[lvl];
+        const reached = this.totalStars >= threshold;
+        const isCurrent = Number(lvl) === this.currentLevel;
+        const cls = reached ? (isCurrent ? 'reached current' : 'reached') : '';
+        return `<span class="trophy-milestone ${cls}">${name} (${threshold})</span>`;
+      }).join('');
+
+      // Sticker grid
+      const stickersHTML = STICKER_REGISTRY.map(s => {
+        const collected = this.collectedStickers.includes(s.id);
+        return `
+          <div class="trophy-item ${collected ? 'collected' : 'locked'}" data-sticker-id="${s.id}">
+            <span class="trophy-item-emoji">${collected ? s.emoji : '?'}</span>
+            <span class="trophy-item-name">${collected ? s.name : '???'}</span>
+          </div>
+        `;
+      }).join('');
+
+      // Accessory grid
+      const accessoriesHTML = ACCESSORY_REGISTRY.map(a => {
+        const unlocked = this.unlockedAccessories.includes(a.id);
+        return `
+          <div class="trophy-item ${unlocked ? 'collected' : 'locked'}" data-accessory-id="${a.id}">
+            <span class="trophy-item-emoji">${unlocked ? a.emoji : '?'}</span>
+            <span class="trophy-item-name">${unlocked ? a.name : '???'}</span>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+        <div class="trophy-star-header">
+          <i class="bi bi-star-fill"></i> ${this.totalStars} Stars
+        </div>
+        <div class="trophy-level-badge">${levelName}</div>
+        <div class="trophy-progress-bar">
+          <div class="trophy-progress-fill" style="width: ${progressPct}%"></div>
+          <span class="trophy-progress-text">${progressLabel}</span>
+        </div>
+        <div class="trophy-milestones">${milestonesHTML}</div>
+        <h3 class="trophy-section-title">Stickers (${this.collectedStickers.length}/${STICKER_REGISTRY.length})</h3>
+        <div class="trophy-grid">${stickersHTML}</div>
+        <h3 class="trophy-section-title">Outfits (${this.unlockedAccessories.length}/${ACCESSORY_REGISTRY.length})</h3>
+        <div class="trophy-grid">${accessoriesHTML}</div>
+      `;
+
+      // Click collected stickers to hear name
+      container.querySelectorAll('.trophy-item.collected[data-sticker-id]').forEach(el => {
+        el.addEventListener('click', () => {
+          const sticker = STICKER_REGISTRY.find(s => s.id === el.dataset.stickerId);
+          if (sticker) AppAPI.call('speak', sticker.name);
+        });
+      });
+
+      // Click unlocked accessories to hear name
+      container.querySelectorAll('.trophy-item.collected[data-accessory-id]').forEach(el => {
+        el.addEventListener('click', () => {
+          const acc = ACCESSORY_REGISTRY.find(a => a.id === el.dataset.accessoryId);
+          if (acc) AppAPI.call('speak', acc.name);
+        });
+      });
+    }
+
     renderProgressPanel(containerId, activityName) {
       const container = document.getElementById(containerId);
       if (!container) return;
@@ -312,5 +401,6 @@
   window.ACCESSORY_REGISTRY = ACCESSORY_REGISTRY;
   window.STICKER_CATEGORIES = STICKER_CATEGORIES;
   window.LEVEL_NAMES = LEVEL_NAMES;
+  window.LEVEL_THRESHOLDS = LEVEL_THRESHOLDS;
   window.RewardsManager = RewardsManager;
 })();

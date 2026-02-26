@@ -136,7 +136,10 @@ class SoundsActivity {
 
     speakSound() {
         const currentSound = this.sounds[this.currentIndex];
-        AppAPI.call('speak', currentSound.description);
+        const text = window.DinoPhrase
+            ? window.DinoPhrase('sounds', 'instruction', { sound: currentSound.sound, example: currentSound.examples[0] })
+            : currentSound.description;
+        AppAPI.call('speak', text || currentSound.description);
 
         if (window.characterManager) {
             window.characterManager.playAnimation('talk', true);

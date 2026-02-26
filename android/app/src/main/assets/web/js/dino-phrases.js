@@ -96,13 +96,17 @@
     level_up: [
       "LEVEL UP! Wooow.. you're getting sooo good!",
       "Amaazing.. you reached a new level!",
-      "Ohhh my.. LEVEL UP! You're a superstaaar!"
+      "Ohhh my.. LEVEL UP! You're a superstaaar!",
+      "Wooow.. new level unlocked! You're increeedible!",
+      "Level up, buddy! You're on fiiiire!"
     ],
 
     star_earned: [
       "Ohhh.. a gold star for you!",
       "Yaaay.. you earned a star!",
-      "Looook.. another shiny star!"
+      "Looook.. another shiny star!",
+      "Woooow.. a star! You're amaazing!",
+      "Sparkle sparkle.. a new star!"
     ],
 
     new_stage: {
@@ -205,7 +209,9 @@
     farewell: [
       "Byeee.. see you next time, little one!",
       "Greaat job today.. come back sooon!",
-      "Waaaving goodbye.. you did amaazing!"
+      "Waaaving goodbye.. you did amaazing!",
+      "Seee you later, superstaaar!",
+      "Byeee buddy.. that was sooo much fun!"
     ],
 
     word_complete: [
@@ -252,6 +258,131 @@
         "Liisten.. this is the {sound} sound!",
         "Heear that? It's {sound}.. like in {example}!",
         "The sound {sound}.. can you say it?"
+      ]
+    },
+
+    sorting: {
+      item_appear: [
+        "Ohhh.. it's a {target}! Where does it belong?",
+        "Looook.. a {target}! Which basket?",
+        "Heeey.. I see a {target}! Tap the right group!",
+        "A {target}! Can you sort it?"
+      ],
+      correct: [
+        "Yaaay.. right basket! You're sooo smart!",
+        "Peerfect sorting! That's where it goes!",
+        "Wooow.. you know exactly where it belongs!",
+        "Greaat job! That's the right one!"
+      ],
+      wrong: [
+        "Hmmmm.. not that basket.. try the other one!",
+        "Ohhh.. almost! Try the other group!",
+        "Noope.. that doesn't go there.. try again!",
+        "Not quite.. look at the baskets again!"
+      ]
+    },
+
+    memory: {
+      start: [
+        "Flip two cards and fiiind the matching pairs!",
+        "Remember where the pictures are.. match them up!",
+        "Tap a card to flip it.. then fiiind its twin!"
+      ],
+      match_found: [
+        "Yaaay.. you found a match! Great memory!",
+        "Wooow.. they match! You remembered!",
+        "Peerfect pair! Sooo clever!",
+        "Greaat match! Keep going!"
+      ],
+      no_match: [
+        "Hmmmm.. those don't match.. try to remember them!",
+        "Ohhh.. not a pair.. but now you know where they are!",
+        "Not a match.. keep looking, you'll get it!"
+      ],
+      all_matched: [
+        "Wooow.. you found ALL the pairs! Amaazing!",
+        "Increeedible memory! Every pair matched!",
+        "You did it.. all pairs found! Superstaaar!"
+      ]
+    },
+
+    jigsaw: {
+      start: [
+        "Put the puzzle pieces in the right spots!",
+        "Tap a piece.. then tap where it goes on the board!",
+        "Let's build this picture.. one piece at a time!"
+      ],
+      piece_placed: [
+        "Peerfect fit! That piece is in the right spot!",
+        "Yaaay.. it fits! Great job!",
+        "Wooow.. right where it belongs!",
+        "Niiice one! That piece is placed!"
+      ],
+      wrong_spot: [
+        "Hmmmm.. that piece doesn't go there!",
+        "Ohhh.. try a different spot!",
+        "Not quite.. that's not where it fits!"
+      ],
+      complete: [
+        "Wooow.. the puzzle is complete! Beautiful picture!",
+        "You did it.. every piece in place! Amaazing!",
+        "Peerfect puzzle! You're a puzzle master!"
+      ]
+    },
+
+    drawing: {
+      encouragement: [
+        "Wooow.. what a beautiful drawing!",
+        "Ohhh.. I love those colors!",
+        "Keeeep going.. you're an artist!",
+        "Sooo creative! I love it!"
+      ],
+      saved: [
+        "Amaazing! Your drawing is saved!",
+        "Wooow.. that's a masterpiece! Saved!",
+        "Greaat job.. picture saved!",
+        "Looook at what you made! Saved!"
+      ],
+      clear: [
+        "Ohhh.. a fresh canvas! What will you draw?",
+        "Clean slate! Time for something new!",
+        "Alll clear.. let your imagination go!",
+        "Heeey.. a new page to create on!"
+      ]
+    },
+
+    coloring: {
+      image_change: [
+        "Ohhh.. let's color the {target}!",
+        "Looook.. it's a {target}! Pick your colors!",
+        "Heeey.. time to color the {target}!",
+        "A {target}! What colors will you use?"
+      ],
+      saved: [
+        "Amaazing coloring! Picture saved!",
+        "Wooow.. sooo pretty! Saved!",
+        "Greaat job coloring! Saved!",
+        "Looook how beautiful! Saved!"
+      ],
+      clear: [
+        "Ohhh.. let's start fresh on this one!",
+        "Clean canvas.. color it again!",
+        "Starting over.. you can do it different this time!"
+      ]
+    },
+
+    dot2dot: {
+      image_change: [
+        "Ohhh.. let's connect the dots for a {target}!",
+        "Looook.. a {target} is hiding in the dots!",
+        "Heeey.. connect the dots to make a {target}!",
+        "A {target}! Follow the numbers!"
+      ],
+      saved: [
+        "Amaazing! Your dot to dot is saved!",
+        "Wooow.. great connecting! Saved!",
+        "Looook what you made! Saved!",
+        "Peerfect! Picture saved!"
       ]
     },
 
