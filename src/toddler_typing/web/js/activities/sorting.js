@@ -18,7 +18,7 @@ class SortingActivity {
                     ]},
                     { name: 'Blue Things', emoji: '\uD83D\uDD35', items: [
                         { emoji: '\uD83C\uDF0A', label: 'Wave' },
-                        { emoji: '\uD83E\uDD8B', label: 'Butterfly' },
+                        { emoji: '\uD83D\uDC8E', label: 'Diamond' },
                         { emoji: '\uD83D\uDC33', label: 'Whale' },
                         { emoji: '\uD83E\uDDCA', label: 'Ice' },
                         { emoji: '\uD83D\uDC99', label: 'Blue Heart' }
@@ -188,6 +188,10 @@ class SortingActivity {
                 <div class="item-label">${this.currentItem.label}</div>
             </div>
         `;
+
+        // Speak item name for non-readers
+        const itemText = window.DinoPhrase ? window.DinoPhrase('sorting', 'item_appear', { target: this.currentItem.label }) : this.currentItem.label;
+        AppAPI.call('speak', itemText);
     }
 
     async handleBasketClick(basketEl) {
@@ -223,7 +227,7 @@ class SortingActivity {
                 }
             }
 
-            const correctText = window.DinoPhrase ? window.DinoPhrase('correct_first_try') : 'Right!';
+            const correctText = window.DinoPhrase ? window.DinoPhrase('sorting', 'correct') : 'Right!';
             AppAPI.call('speak', correctText);
 
             this.updateScore();
@@ -243,7 +247,7 @@ class SortingActivity {
                 window.characterManager.playAnimation('thinking', false);
             }
 
-            const wrongText = window.DinoPhrase ? window.DinoPhrase('wrong_key') : 'Try the other one!';
+            const wrongText = window.DinoPhrase ? window.DinoPhrase('sorting', 'wrong') : 'Try the other one!';
             AppAPI.call('speak', wrongText);
 
             this.updateScore();

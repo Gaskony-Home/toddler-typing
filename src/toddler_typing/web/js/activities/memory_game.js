@@ -15,8 +15,8 @@ class MemoryGameActivity {
 
         this.difficulties = {
             easy: { pairs: 3, gridClass: 'grid-3x2' },
-            medium: { pairs: 6, gridClass: 'grid-4x3' },
-            hard: { pairs: 9, gridClass: 'grid-6x3' }
+            medium: { pairs: 6, gridClass: 'grid-3x4' },
+            hard: { pairs: 8, gridClass: 'grid-4x4' }
         };
 
         this.difficulty = 'easy';
@@ -86,6 +86,10 @@ class MemoryGameActivity {
             }));
 
         this.renderGrid();
+
+        // Speak instructions for non-readers
+        const startText = window.DinoPhrase ? window.DinoPhrase('memory', 'start') : 'Find the matching pairs!';
+        AppAPI.call('speak', startText);
     }
 
     renderGrid() {
@@ -151,7 +155,7 @@ class MemoryGameActivity {
                     milestones.forEach(r => this.rewards.showRewardAnimation(r));
                 }
 
-                const matchText = window.DinoPhrase ? window.DinoPhrase('correct_first_try') : 'Great match!';
+                const matchText = window.DinoPhrase ? window.DinoPhrase('memory', 'match_found') : 'Great match!';
                 AppAPI.call('speak', matchText);
 
                 this.flippedCards = [];
@@ -169,7 +173,7 @@ class MemoryGameActivity {
                     window.characterManager.playAnimation('thinking', false);
                 }
 
-                const wrongText = window.DinoPhrase ? window.DinoPhrase('wrong_key') : 'Try again!';
+                const wrongText = window.DinoPhrase ? window.DinoPhrase('memory', 'no_match') : 'Try again!';
                 AppAPI.call('speak', wrongText);
 
                 // Flip cards back after a delay
@@ -200,7 +204,7 @@ class MemoryGameActivity {
             milestones.forEach(r => this.rewards.showRewardAnimation(r));
         }
 
-        const completeText = window.DinoPhrase ? window.DinoPhrase('word_complete') : 'You found all the pairs!';
+        const completeText = window.DinoPhrase ? window.DinoPhrase('memory', 'all_matched') : 'You found all the pairs!';
         AppAPI.call('speak', completeText);
 
         // Auto-restart after celebration
