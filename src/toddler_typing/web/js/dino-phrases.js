@@ -96,13 +96,17 @@
     level_up: [
       "LEVEL UP! Wooow.. you're getting sooo good!",
       "Amaazing.. you reached a new level!",
-      "Ohhh my.. LEVEL UP! You're a superstaaar!"
+      "Ohhh my.. LEVEL UP! You're a superstaaar!",
+      "Wooow.. new level unlocked! You're increeedible!",
+      "Level up, buddy! You're on fiiiire!"
     ],
 
     star_earned: [
       "Ohhh.. a gold star for you!",
       "Yaaay.. you earned a star!",
-      "Looook.. another shiny star!"
+      "Looook.. another shiny star!",
+      "Woooow.. a star! You're amaazing!",
+      "Sparkle sparkle.. a new star!"
     ],
 
     new_stage: {
@@ -205,7 +209,9 @@
     farewell: [
       "Byeee.. see you next time, little one!",
       "Greaat job today.. come back sooon!",
-      "Waaaving goodbye.. you did amaazing!"
+      "Waaaving goodbye.. you did amaazing!",
+      "Seee you later, superstaaar!",
+      "Byeee buddy.. that was sooo much fun!"
     ],
 
     word_complete: [
@@ -321,6 +327,62 @@
         "Wooow.. the puzzle is complete! Beautiful picture!",
         "You did it.. every piece in place! Amaazing!",
         "Peerfect puzzle! You're a puzzle master!"
+      ]
+    },
+
+    drawing: {
+      encouragement: [
+        "Wooow.. what a beautiful drawing!",
+        "Ohhh.. I love those colors!",
+        "Keeeep going.. you're an artist!",
+        "Sooo creative! I love it!"
+      ],
+      saved: [
+        "Amaazing! Your drawing is saved!",
+        "Wooow.. that's a masterpiece! Saved!",
+        "Greaat job.. picture saved!",
+        "Looook at what you made! Saved!"
+      ],
+      clear: [
+        "Ohhh.. a fresh canvas! What will you draw?",
+        "Clean slate! Time for something new!",
+        "Alll clear.. let your imagination go!",
+        "Heeey.. a new page to create on!"
+      ]
+    },
+
+    coloring: {
+      image_change: [
+        "Ohhh.. let's color the {target}!",
+        "Looook.. it's a {target}! Pick your colors!",
+        "Heeey.. time to color the {target}!",
+        "A {target}! What colors will you use?"
+      ],
+      saved: [
+        "Amaazing coloring! Picture saved!",
+        "Wooow.. sooo pretty! Saved!",
+        "Greaat job coloring! Saved!",
+        "Looook how beautiful! Saved!"
+      ],
+      clear: [
+        "Ohhh.. let's start fresh on this one!",
+        "Clean canvas.. color it again!",
+        "Starting over.. you can do it different this time!"
+      ]
+    },
+
+    dot2dot: {
+      image_change: [
+        "Ohhh.. let's connect the dots for a {target}!",
+        "Looook.. a {target} is hiding in the dots!",
+        "Heeey.. connect the dots to make a {target}!",
+        "A {target}! Follow the numbers!"
+      ],
+      saved: [
+        "Amaazing! Your dot to dot is saved!",
+        "Wooow.. great connecting! Saved!",
+        "Looook what you made! Saved!",
+        "Peerfect! Picture saved!"
       ]
     },
 

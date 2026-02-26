@@ -46,6 +46,11 @@ class LettersNumbersActivity {
         console.log('Stopping Letters & Numbers activity');
         this.isActive = false;
 
+        // Speak farewell
+        if (window.DinoVoice && window.DinoVoice.speakPhrase) {
+            window.DinoVoice.speakPhrase('farewell');
+        }
+
         // Remove keyboard event listener
         if (this.keydownHandler) {
             document.removeEventListener('keydown', this.keydownHandler);
@@ -109,6 +114,14 @@ class LettersNumbersActivity {
         if (result && result.success && result.correct) {
             // Correct answer!
             await this.handleCorrectAnswer(result);
+        } else if (result && result.success && !result.correct) {
+            // Wrong answer — give feedback
+            if (window.DinoVoice && window.DinoVoice.speakPhrase) {
+                window.DinoVoice.speakPhrase('wrong_key');
+            }
+            if (window.characterManager) {
+                window.characterManager.playAnimation('thinking', false);
+            }
         }
     }
 

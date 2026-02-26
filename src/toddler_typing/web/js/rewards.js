@@ -148,6 +148,10 @@
     }
 
     showRewardAnimation(reward) {
+      // Speak star_earned phrase
+      const starText = window.DinoPhrase ? window.DinoPhrase('star_earned') : '';
+      if (starText) AppAPI.call('speak', starText);
+
       const overlay = document.createElement('div');
       overlay.className = 'reward-overlay';
 

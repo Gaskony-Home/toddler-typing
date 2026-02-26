@@ -22,6 +22,7 @@ class Dot2DotActivity {
         this.lastY = 0;
         this.backgroundImage = null;
         this._resizeHandler = () => this.resizeCanvas();
+        this._firstLoad = true;
     }
 
     async start() {
@@ -49,10 +50,7 @@ class Dot2DotActivity {
         this.setupButtons();
         this.setupDrawingEvents();
 
-        // Speak welcome message
-        AppAPI.call('speak', 'Connect the dots to make a picture!');
-
-        // Character wave
+        // Character wave (welcome voice handled by ActivityManager)
         if (window.characterManager) {
             window.characterManager.playAnimation('wave', false);
         }
@@ -106,6 +104,13 @@ class Dot2DotActivity {
             };
             img.src = imagePath;
         });
+
+        // Speak image change (skip first load — welcome handles it)
+        if (!this._firstLoad) {
+            const text = window.DinoPhrase ? window.DinoPhrase('dot2dot', 'image_change', { target: imageName }) : '';
+            if (text) AppAPI.call('speak', text);
+        }
+        this._firstLoad = false;
     }
 
     drawBackgroundImage() {
@@ -265,7 +270,8 @@ class Dot2DotActivity {
         if (window.characterManager) {
             window.characterManager.playAnimation('happy', false);
         }
-        AppAPI.call('speak', 'Picture saved!');
+        const savedText = window.DinoPhrase ? window.DinoPhrase('dot2dot', 'saved') : 'Picture saved!';
+        AppAPI.call('speak', savedText);
     }
 
     updateButtons() {
