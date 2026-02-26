@@ -148,13 +148,20 @@ class TtsEngine {
 
     // Normalize dino-style text for TTS (elongated vowels confuse neural models)
     // "Weeelcome" → "Welcome", "Ohhh" → "Oh", "Heeey" → "Hey"
-    let processed = text.replace(/([a-zA-Z])\1{2,}/g, '$1$1'); // Reduce 3+ repeats to 2
-    processed = processed.replace(/([aeiouAEIOU])\1+/g, '$1');   // Reduce repeated vowels to 1
-    // Fix common patterns: "Heeey" → "Hey" not "Hy"
-    processed = processed.replace(/\b([Hh])y\b/g, '$1ey');
+    let processed = text.replace(/(.)\1{2,}/g, '$1$1');          // 3+ repeats → 2
+    processed = processed.replace(/([aeiouAEIOU])\1+/g, '$1');   // Repeated vowels → 1
+    processed = processed.replace(/\b([Hh])y\b/g, '$1ey');       // Hy → Hey
+    // Restore words with natural double vowels (broken by vowel reduction above)
+    processed = processed.replace(/\b([Ll])ok/g, '$1ook');        // lok → look
+    processed = processed.replace(/\b([Ss])e\b/g, '$1ee');        // se → see
+    processed = processed.replace(/\b([Kk])ep\b/g, '$1eep');      // kep → keep
+    processed = processed.replace(/\b([Gg])od\b/g, '$1ood');      // god → good
+    processed = processed.replace(/\b([Ss])on\b/g, '$1oon');      // son → soon
+    processed = processed.replace(/\b([Tt])hre\b/g, '$1hree');    // thre → three
     // Convert ".." pauses to commas for natural speech
     processed = processed.replace(/\.\./g, ',');
-    processed = processed.replace(/!/g, '! ');
+    // Collapse multiple spaces
+    processed = processed.replace(/\s{2,}/g, ' ').trim();
 
     const genConfig = {};
 
@@ -162,7 +169,7 @@ class TtsEngine {
       genConfig.speed = speed;
       genConfig.referenceAudio = this._referenceWave.samples;
       genConfig.referenceSampleRate = this._referenceWave.sampleRate;
-      genConfig.numSteps = 20;
+      genConfig.numSteps = 40;
       genConfig.extra = { max_reference_audio_len: 12 };
     }
 
@@ -174,10 +181,62 @@ class TtsEngine {
       generationConfig,
     });
 
+    // Use tts.sampleRate (reliable) instead of audio.sampleRate (returns garbage
+    // values with PocketTTS in sherpa-onnx-node)
+    const samples = this._normalize(audio.samples);
     return {
-      samples: audio.samples,
-      sampleRate: audio.sampleRate,
+      samples,
+      sampleRate: this._tts.sampleRate,
     };
+  }
+
+  /**
+   * Normalize audio to a target peak level and trim trailing silence.
+   * PocketTTS output varies in volume and often has trailing silence.
+   */
+  _normalize(samples, targetPeak = 0.85) {
+    // Trim trailing silence (RMS below threshold in 50ms windows)
+    const sampleRate = this._tts.sampleRate;
+    const windowSize = Math.floor(sampleRate * 0.05);
+    const silenceThreshold = 0.02;
+    let trimEnd = samples.length;
+
+    // Cap at 10 seconds max — PocketTTS can produce excessive output
+    const maxSamples = sampleRate * 10;
+    if (trimEnd > maxSamples) trimEnd = maxSamples;
+
+    for (let i = trimEnd - windowSize; i >= 0; i -= windowSize) {
+      let sum = 0;
+      const end = Math.min(i + windowSize, trimEnd);
+      for (let j = i; j < end; j++) {
+        sum += samples[j] * samples[j];
+      }
+      if (Math.sqrt(sum / (end - i)) > silenceThreshold) {
+        // Add 100ms of padding after last speech
+        trimEnd = Math.min(trimEnd, i + windowSize + Math.floor(sampleRate * 0.1));
+        break;
+      }
+    }
+
+    const trimmed = trimEnd < samples.length ? samples.slice(0, trimEnd) : samples;
+
+    // Peak-normalize to target level (handles both quiet and clipping audio)
+    let maxAbs = 0;
+    for (let i = 0; i < trimmed.length; i++) {
+      const abs = Math.abs(trimmed[i]);
+      if (abs > maxAbs) maxAbs = abs;
+    }
+    if (maxAbs < 0.001) return trimmed; // Silence, don't amplify noise
+
+    const gain = targetPeak / maxAbs;
+    // Skip if already within 10% of target
+    if (gain > 0.9 && gain < 1.1) return trimmed;
+
+    const normalized = new Float32Array(trimmed.length);
+    for (let i = 0; i < trimmed.length; i++) {
+      normalized[i] = trimmed[i] * gain;
+    }
+    return normalized;
   }
 
   /**
