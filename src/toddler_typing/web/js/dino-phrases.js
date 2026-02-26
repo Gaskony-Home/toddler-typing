@@ -255,6 +255,75 @@
       ]
     },
 
+    sorting: {
+      item_appear: [
+        "Ohhh.. it's a {target}! Where does it belong?",
+        "Looook.. a {target}! Which basket?",
+        "Heeey.. I see a {target}! Tap the right group!",
+        "A {target}! Can you sort it?"
+      ],
+      correct: [
+        "Yaaay.. right basket! You're sooo smart!",
+        "Peerfect sorting! That's where it goes!",
+        "Wooow.. you know exactly where it belongs!",
+        "Greaat job! That's the right one!"
+      ],
+      wrong: [
+        "Hmmmm.. not that basket.. try the other one!",
+        "Ohhh.. almost! Try the other group!",
+        "Noope.. that doesn't go there.. try again!",
+        "Not quite.. look at the baskets again!"
+      ]
+    },
+
+    memory: {
+      start: [
+        "Flip two cards and fiiind the matching pairs!",
+        "Remember where the pictures are.. match them up!",
+        "Tap a card to flip it.. then fiiind its twin!"
+      ],
+      match_found: [
+        "Yaaay.. you found a match! Great memory!",
+        "Wooow.. they match! You remembered!",
+        "Peerfect pair! Sooo clever!",
+        "Greaat match! Keep going!"
+      ],
+      no_match: [
+        "Hmmmm.. those don't match.. try to remember them!",
+        "Ohhh.. not a pair.. but now you know where they are!",
+        "Not a match.. keep looking, you'll get it!"
+      ],
+      all_matched: [
+        "Wooow.. you found ALL the pairs! Amaazing!",
+        "Increeedible memory! Every pair matched!",
+        "You did it.. all pairs found! Superstaaar!"
+      ]
+    },
+
+    jigsaw: {
+      start: [
+        "Put the puzzle pieces in the right spots!",
+        "Tap a piece.. then tap where it goes on the board!",
+        "Let's build this picture.. one piece at a time!"
+      ],
+      piece_placed: [
+        "Peerfect fit! That piece is in the right spot!",
+        "Yaaay.. it fits! Great job!",
+        "Wooow.. right where it belongs!",
+        "Niiice one! That piece is placed!"
+      ],
+      wrong_spot: [
+        "Hmmmm.. that piece doesn't go there!",
+        "Ohhh.. try a different spot!",
+        "Not quite.. that's not where it fits!"
+      ],
+      complete: [
+        "Wooow.. the puzzle is complete! Beautiful picture!",
+        "You did it.. every piece in place! Amaazing!",
+        "Peerfect puzzle! You're a puzzle master!"
+      ]
+    },
+
     letters_numbers: {
       instruction_letter: [
         "Fiiind the letter {target} and press it!",
