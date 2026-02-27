@@ -33,6 +33,13 @@ async function downloadModel() {
   );
   if (allPresent) {
     console.log('[setup:tts] PocketTTS model already downloaded, skipping.');
+    // Still copy reference voice if missing
+    const refSrc = path.join(__dirname, '..', 'resources', 'voice', 'reference-voice.wav');
+    const refDst = path.join(MODEL_DIR, 'reference-voice.wav');
+    if (fs.existsSync(refSrc) && !fs.existsSync(refDst)) {
+      fs.copyFileSync(refSrc, refDst);
+      console.log('[setup:tts] Reference voice copied to tts-model/');
+    }
     return;
   }
 
@@ -93,6 +100,14 @@ async function downloadModel() {
   );
   if (missing.length > 0) {
     throw new Error(`Extraction failed: missing files: ${missing.join(', ')}`);
+  }
+
+  // Copy reference voice for voice cloning (tracked in git, not part of model tarball)
+  const refSource = path.join(__dirname, '..', 'resources', 'voice', 'reference-voice.wav');
+  const refDest = path.join(MODEL_DIR, 'reference-voice.wav');
+  if (fs.existsSync(refSource) && !fs.existsSync(refDest)) {
+    fs.copyFileSync(refSource, refDest);
+    console.log('[setup:tts] Reference voice copied to tts-model/');
   }
 
   console.log('[setup:tts] PocketTTS model ready at resources/tts-model/');
