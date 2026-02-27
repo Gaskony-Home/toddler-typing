@@ -6,14 +6,14 @@
 class SoundsActivity {
     constructor() {
         this.sounds = [
-            { sound: 'sh', examples: ['ship', 'fish', 'wash'], description: 'SH like in Ship' },
-            { sound: 'ch', examples: ['chip', 'much', 'chair'], description: 'CH like in Chip' },
-            { sound: 'th', examples: ['this', 'that', 'with'], description: 'TH like in This' },
-            { sound: 'ph', examples: ['phone', 'graph', 'photo'], description: 'PH like in Phone' },
-            { sound: 'wh', examples: ['what', 'when', 'why'], description: 'WH like in What' },
-            { sound: 'ck', examples: ['duck', 'sock', 'back'], description: 'CK like in Duck' },
-            { sound: 'ng', examples: ['sing', 'ring', 'long'], description: 'NG like in Sing' },
-            { sound: 'qu', examples: ['queen', 'quick', 'quiet'], description: 'QU like in Queen' }
+            { sound: 'sh', phonetic: 'shh', examples: ['ship', 'fish', 'wash'] },
+            { sound: 'ch', phonetic: 'chh', examples: ['chip', 'much', 'chair'] },
+            { sound: 'th', phonetic: 'thh', examples: ['this', 'that', 'with'] },
+            { sound: 'ph', phonetic: 'ff', examples: ['phone', 'graph', 'photo'] },
+            { sound: 'wh', phonetic: 'wh', examples: ['what', 'when', 'why'] },
+            { sound: 'ck', phonetic: 'ck', examples: ['duck', 'sock', 'back'] },
+            { sound: 'ng', phonetic: 'ng', examples: ['sing', 'ring', 'long'] },
+            { sound: 'qu', phonetic: 'kw', examples: ['queen', 'quick', 'quiet'] }
         ];
 
         // Distractor words that don't contain any of the digraph sounds
@@ -136,10 +136,10 @@ class SoundsActivity {
 
     speakSound() {
         const currentSound = this.sounds[this.currentIndex];
-        const text = window.DinoPhrase
-            ? window.DinoPhrase('sounds', 'instruction', { sound: currentSound.sound, example: currentSound.examples[0] })
-            : currentSound.description;
-        AppAPI.call('speak', text || currentSound.description);
+        const example = currentSound.examples[0];
+        // Speak phonetically: the sound itself, then the example word
+        const text = `${currentSound.phonetic}.. ${currentSound.phonetic}.. like in ${example}`;
+        AppAPI.call('speak', text);
 
         if (window.characterManager) {
             window.characterManager.playAnimation('talk', true);

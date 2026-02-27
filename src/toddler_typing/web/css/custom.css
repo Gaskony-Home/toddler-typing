@@ -91,6 +91,7 @@ body:has(.menu-wrapper.hidden) .page-header {
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    padding: 0;
 }
 
 .page-footer {
@@ -118,39 +119,40 @@ h1, h2, h3, h4, h5, h6 {
 
 /* === Menu Wrapper === */
 .menu-wrapper {
-    max-width: 800px;
-    width: 90%;
+    max-width: 1200px;
+    width: 95%;
     margin: 0 auto;
+    max-height: none;
 }
 
 .menu-title {
     text-align: center;
-    font-size: clamp(2rem, 5vw, 3rem);
-    margin-bottom: clamp(0.5rem, 1.5vh, 1.5rem);
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    margin-bottom: clamp(0.25rem, 1vh, 1rem);
 }
 
 /* === Activity Grid (3-column, auto rows) === */
 .activity-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: clamp(0.5rem, 1vw, 1.25rem);
+    gap: clamp(0.4rem, 0.8vw, 1rem);
     width: 100%;
 }
 
 /* === Activity Card Buttons === */
 .activity-card {
     aspect-ratio: auto;
-    min-height: clamp(90px, 13vh, 180px);
+    min-height: clamp(60px, 10vh, 140px);
     position: relative;
     background: var(--bg-secondary);
     border: none;
     border-radius: var(--border-radius-xl);
-    padding: 1rem;
+    padding: clamp(0.5rem, 1.5vh, 1rem);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.25rem;
     text-align: center;
     cursor: pointer;
     transition: all var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
@@ -545,21 +547,16 @@ footer {
 
 /* === Responsive Design === */
 @media (max-width: 768px) {
-    .activity-card {
-        min-height: 240px;
-        padding: 2rem 1.5rem;
-    }
-
     .card-icon i {
-        font-size: 4rem;
+        font-size: clamp(2rem, 5vw, 4rem);
     }
 
     .card-title {
-        font-size: 1.75rem;
+        font-size: clamp(1rem, 2.5vw, 1.75rem);
     }
 
     .card-subtitle {
-        font-size: 1.125rem;
+        font-size: clamp(0.75rem, 1.5vw, 1.125rem);
     }
 
     .btn-icon {
@@ -570,21 +567,16 @@ footer {
 }
 
 @media (max-width: 576px) {
-    .activity-card {
-        min-height: 200px;
-        padding: 1.5rem 1rem;
-    }
-
     .card-icon i {
-        font-size: 3.5rem;
+        font-size: clamp(1.5rem, 4vw, 3.5rem);
     }
 
     .card-title {
-        font-size: 1.5rem;
+        font-size: clamp(0.85rem, 2vw, 1.5rem);
     }
 
     .card-subtitle {
-        font-size: 1rem;
+        font-size: clamp(0.65rem, 1.5vw, 1rem);
     }
 
     .btn-back {
@@ -595,47 +587,36 @@ footer {
 }
 
 /* === Small Screen Height Scaling === */
-@media (max-height: 700px) {
-    html, body {
-        overflow-y: auto;
-    }
-    .page-container {
-        overflow-y: auto;
-        align-items: flex-start;
-        padding: 1rem 0;
-    }
+@media (max-height: 800px) {
     .activity-card {
-        padding: 0.5rem;
-        gap: 0.25rem;
+        padding: 0.4rem;
+        gap: 0.2rem;
     }
     .card-icon {
-        font-size: clamp(1.8rem, 4vw, 2.5rem);
+        font-size: clamp(1.5rem, 3vw, 2.5rem);
     }
     .card-title {
-        font-size: clamp(0.8rem, 2vw, 1.1rem);
+        font-size: clamp(0.75rem, 1.8vw, 1.1rem);
     }
     .card-subtitle {
-        font-size: clamp(0.65rem, 1.5vw, 0.85rem);
+        font-size: clamp(0.6rem, 1.2vw, 0.85rem);
     }
 }
 
-@media (max-height: 600px) {
-    .activity-card {
-        min-height: 90px;
-    }
+@media (max-height: 650px) {
     .card-subtitle {
         display: none;
     }
     .menu-title {
-        font-size: clamp(1.5rem, 4vw, 2rem);
-        margin-bottom: 0.5rem;
+        font-size: clamp(1.2rem, 3vw, 1.8rem);
+        margin-bottom: 0.25rem;
     }
     .row-label {
-        font-size: 0.6rem;
+        font-size: 0.55rem;
         padding: 0.1rem 0.5rem 0;
     }
     .activity-grid {
-        gap: 0.5rem;
+        gap: 0.35rem;
     }
 }
 
@@ -2256,21 +2237,21 @@ body:has(.typing-game-activity) #character-container {
 
 .memory-grid {
     display: grid;
-    gap: clamp(0.5rem, 1.5vw, 1rem);
+    gap: clamp(0.75rem, 2vw, 1.5rem);
     justify-content: center;
     margin: 0 auto;
-    max-width: min(700px, 90vw);
+    width: 90%;
+    max-width: 900px;
     perspective: 1000px;
 }
 
-.memory-grid.grid-3x2 { grid-template-columns: repeat(3, 1fr); }
-.memory-grid.grid-3x4 { grid-template-columns: repeat(3, 1fr); }
-.memory-grid.grid-4x4 { grid-template-columns: repeat(4, 1fr); }
+.memory-grid.grid-3x2 { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 600px; }
+.memory-grid.grid-3x4 { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 700px; }
+.memory-grid.grid-4x4 { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 900px; }
 
 .memory-card {
     aspect-ratio: 1;
-    min-width: 100px;
-    min-height: 100px;
+    min-width: 0;
     cursor: pointer;
     position: relative;
     transform-style: preserve-3d;
@@ -2314,7 +2295,7 @@ body:has(.typing-game-activity) #character-container {
 .memory-card-front {
     background: var(--bg-secondary);
     transform: rotateY(180deg);
-    font-size: clamp(3.5rem, 10vw, 5.5rem);
+    font-size: clamp(3.5rem, 8vw, 6rem);
 }
 
 /* ============================================
@@ -2323,6 +2304,55 @@ body:has(.typing-game-activity) #character-container {
 
 .jigsaw-activity {
     padding: 0.5rem 1rem;
+}
+
+.jigsaw-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    width: 100%;
+}
+
+.jigsaw-nav-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #e44d26, #f16529);
+    border: none;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(228, 77, 38, 0.4);
+}
+
+.jigsaw-nav-btn:hover {
+    transform: scale(1.1);
+}
+
+.jigsaw-difficulty-scroll {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    justify-content: flex-start;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.jigsaw-difficulty-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.jigsaw-difficulty-scroll .difficulty-btn {
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .jigsaw-board-area {
@@ -2342,16 +2372,16 @@ body:has(.typing-game-activity) #character-container {
 
 .jigsaw-pieces-tray {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.5rem;
     justify-content: center;
     flex-wrap: wrap;
     padding: 0.75rem;
     background: var(--bg-secondary);
     border-radius: var(--border-radius-lg);
     box-shadow: 0 4px 12px var(--shadow-color);
-    max-width: 600px;
+    max-width: 90%;
     margin: 0 auto;
-    min-height: 80px;
+    min-height: 60px;
 }
 
 .jigsaw-piece-wrapper {
@@ -2527,11 +2557,7 @@ body:has(.typing-game-activity) #character-container {
 /* Memory cards small screen override */
 @media (max-width: 576px) {
     .memory-grid {
-        max-width: 95vw;
-    }
-    .memory-card {
-        min-width: 70px;
-        min-height: 70px;
+        width: 95%;
     }
 }
 

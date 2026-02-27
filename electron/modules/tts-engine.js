@@ -169,7 +169,7 @@ class TtsEngine {
       genConfig.speed = speed;
       genConfig.referenceAudio = this._referenceWave.samples;
       genConfig.referenceSampleRate = this._referenceWave.sampleRate;
-      genConfig.numSteps = 40;
+      genConfig.numSteps = 20;
       genConfig.extra = { max_reference_audio_len: 12 };
     }
 

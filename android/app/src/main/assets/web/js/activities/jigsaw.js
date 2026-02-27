@@ -15,9 +15,13 @@ class JigsawActivity {
         ];
 
         this.difficulties = {
-            easy:   { cols: 2, rows: 2 },
-            medium: { cols: 3, rows: 2 },
-            hard:   { cols: 3, rows: 3 }
+            easy:    { cols: 2, rows: 2 },
+            medium:  { cols: 3, rows: 2 },
+            hard:    { cols: 3, rows: 3 },
+            harder:  { cols: 4, rows: 3 },
+            tough:   { cols: 4, rows: 4 },
+            expert:  { cols: 5, rows: 4 },
+            master:  { cols: 6, rows: 5 }
         };
 
         this.difficulty = 'easy';
@@ -46,6 +50,7 @@ class JigsawActivity {
         }
 
         this.setupDifficultyButtons();
+        this.setupSceneNavigation();
 
         if (window.characterManager) {
             window.characterManager.playAnimation('wave', false);
@@ -66,6 +71,24 @@ class JigsawActivity {
                 this.startNewPuzzle();
             });
         });
+    }
+
+    setupSceneNavigation() {
+        const prevBtn = document.getElementById('prevScene');
+        const nextBtn = document.getElementById('nextScene');
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                this.currentSceneIndex = (this.currentSceneIndex - 1 + this.scenes.length) % this.scenes.length;
+                this.startNewPuzzle();
+            });
+        }
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                this.currentSceneIndex = (this.currentSceneIndex + 1) % this.scenes.length;
+                this.startNewPuzzle();
+            });
+        }
     }
 
     startNewPuzzle() {
@@ -189,9 +212,10 @@ class JigsawActivity {
             const col = i % config.cols;
             const row = Math.floor(i / config.cols);
 
-            // Create mini canvas for this piece
+            // Create mini canvas for this piece — scale down for higher piece counts
             const pieceCanvas = document.createElement('canvas');
-            const displaySize = Math.min(80, pw);
+            const maxDisplay = this.totalPieces <= 9 ? 80 : this.totalPieces <= 16 ? 60 : 50;
+            const displaySize = Math.min(maxDisplay, pw);
             pieceCanvas.width = displaySize;
             pieceCanvas.height = displaySize;
             const pCtx = pieceCanvas.getContext('2d');
@@ -331,8 +355,7 @@ class JigsawActivity {
         const completeText = window.DinoPhrase ? window.DinoPhrase('jigsaw', 'complete') : 'Puzzle complete!';
         AppAPI.call('speak', completeText);
 
-        this.currentSceneIndex++;
-        setTimeout(() => this.startNewPuzzle(), 3000);
+        // Don't auto-advance — let the child pick their next puzzle with nav buttons
     }
 
     // =============================================
