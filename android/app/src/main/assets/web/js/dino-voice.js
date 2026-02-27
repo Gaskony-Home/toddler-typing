@@ -62,6 +62,9 @@
   let convolverNode = null;
   let currentSource = null;
   let initialized = false;
+  let speakQueue = [];      // Pending speak requests
+  let isSpeaking = false;   // Whether audio is currently playing
+  let currentGenId = 0;     // Monotonic ID for cancellation
 
   // Effects chain parameters — light touch since voice cloning preserves character:
   // PocketTTS clones the reference voice directly, so we only add subtle warmth
@@ -194,23 +197,27 @@
 
   // ───── PocketTTS speak path ─────
 
-  async function speakWithPocketTTS(text) {
+  async function speakWithPocketTTS(text, genId) {
     // Resume AudioContext if suspended (browser autoplay policy)
     if (audioCtx.state === 'suspended') {
       await audioCtx.resume();
+    }
+
+    // Request audio from main process (speed 0.9 for slight dino drawl)
+    const result = await window.electronAPI.ttsSpeak({ text, speed: 0.9 });
+
+    // Check if this request was cancelled while we were generating
+    if (genId !== currentGenId) return;
+
+    if (!result || !result.available || !result.samples) {
+      speakWithWebSpeech(text);
+      return;
     }
 
     // Stop any current playback
     if (currentSource) {
       try { currentSource.stop(); } catch (_) { /* already stopped */ }
       currentSource = null;
-    }
-
-    // Request audio from main process (speed 0.9 for slight dino drawl)
-    const result = await window.electronAPI.ttsSpeak({ text, speed: 0.9 });
-    if (!result || !result.available || !result.samples) {
-      speakWithWebSpeech(text);
-      return;
     }
 
     // Convert ArrayBuffer to Float32Array
@@ -233,12 +240,36 @@
     source.onended = () => {
       if (currentSource === source) {
         currentSource = null;
+        isSpeaking = false;
         stopSpeakingAnimation();
+        processQueue();
       }
     };
 
     currentSource = source;
+    isSpeaking = true;
     source.start(0);
+  }
+
+  /**
+   * Process the next item in the speak queue.
+   */
+  function processQueue() {
+    if (isSpeaking || speakQueue.length === 0) return;
+
+    const { text } = speakQueue.shift();
+
+    if (usePocketTTS) {
+      const genId = currentGenId;
+      isSpeaking = true;
+      speakWithPocketTTS(text, genId).catch(err => {
+        console.warn('[DinoVoice] PocketTTS speak failed, falling back:', err.message);
+        isSpeaking = false;
+        speakWithWebSpeech(text);
+      });
+    } else {
+      speakWithWebSpeech(text);
+    }
   }
 
   // ───── Web Speech API speak path (fallback) ─────
@@ -274,19 +305,46 @@
     if (!text || typeof text !== 'string') return;
     if (!initialized) init();
 
-    if (interrupt) stop();
+    if (interrupt) {
+      // Cancel everything: queue, current playback, pending generation
+      speakQueue = [];
+      currentGenId++;
+      if (currentSource) {
+        try { currentSource.stop(); } catch (_) { /* already stopped */ }
+        currentSource = null;
+      }
+      isSpeaking = false;
+      stopSpeakingAnimation();
+      if (synth) synth.cancel();
+    }
 
     if (usePocketTTS) {
-      speakWithPocketTTS(text).catch(err => {
-        console.warn('[DinoVoice] PocketTTS speak failed, falling back:', err.message);
-        speakWithWebSpeech(text);
-      });
+      if (!isSpeaking && speakQueue.length === 0) {
+        // Nothing playing — speak immediately
+        const genId = currentGenId;
+        isSpeaking = true;
+        speakWithPocketTTS(text, genId).catch(err => {
+          console.warn('[DinoVoice] PocketTTS speak failed, falling back:', err.message);
+          isSpeaking = false;
+          speakWithWebSpeech(text);
+        });
+      } else {
+        // Queue it (max 2 queued items to prevent pile-up)
+        if (speakQueue.length < 2) {
+          speakQueue.push({ text });
+        }
+      }
     } else {
       speakWithWebSpeech(text);
     }
   }
 
   function stop() {
+    // Cancel everything
+    speakQueue = [];
+    currentGenId++;
+    isSpeaking = false;
+
     // Stop PocketTTS audio
     if (currentSource) {
       try { currentSource.stop(); } catch (_) { /* already stopped */ }

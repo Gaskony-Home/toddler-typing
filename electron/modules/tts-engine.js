@@ -1,134 +1,99 @@
 /**
- * TtsEngine - PocketTTS voice cloning via sherpa-onnx
+ * TtsEngine - Non-blocking PocketTTS voice cloning via worker thread
  *
- * Uses PocketTTS (zero-shot voice cloning) with a reference voice recording
- * to generate speech that sounds like the dinosaur character.
- * Falls back gracefully if the native module or model files are unavailable.
+ * Runs TTS generation in a worker thread to avoid blocking the main process.
+ * Includes an LRU cache so repeated phrases are returned instantly.
  */
 
 const path = require('path');
 const fs = require('fs');
+const { Worker } = require('worker_threads');
+
+// Cache up to 50 phrases (~50 * 100KB = ~5MB memory)
+const CACHE_MAX = 50;
 
 class TtsEngine {
   constructor() {
-    this._tts = null;
+    this._worker = null;
     this._available = false;
-    this._referenceWave = null;
-    this._sherpa = null;
+    this._pendingRequests = new Map();
+    this._nextId = 0;
+    this._cache = new Map(); // LRU cache: key → { samples, sampleRate, duration }
+    this._modelDir = null;
     this._init();
-  }
-
-  _init() {
-    try {
-      const modelDir = this._resolveModelDir();
-      if (!modelDir) {
-        console.warn('[TtsEngine] Model files not found, PocketTTS unavailable');
-        return;
-      }
-
-      this._sherpa = require('sherpa-onnx-node');
-      const { OfflineTts } = this._sherpa;
-
-      const config = {
-        model: {
-          pocket: {
-            lmFlow: path.join(modelDir, 'lm_flow.int8.onnx'),
-            lmMain: path.join(modelDir, 'lm_main.int8.onnx'),
-            encoder: path.join(modelDir, 'encoder.onnx'),
-            decoder: path.join(modelDir, 'decoder.int8.onnx'),
-            textConditioner: path.join(modelDir, 'text_conditioner.onnx'),
-            vocabJson: path.join(modelDir, 'vocab.json'),
-            tokenScoresJson: path.join(modelDir, 'token_scores.json'),
-          },
-          debug: false,
-          numThreads: 2,
-          provider: 'cpu',
-        },
-        maxNumSentences: 1,
-      };
-
-      console.log('[TtsEngine] Creating OfflineTts with config...');
-      this._tts = new OfflineTts(config);
-      console.log('[TtsEngine] OfflineTts created successfully');
-
-      // Load reference voice for cloning
-      const refPath = path.join(modelDir, 'reference-voice.wav');
-      if (fs.existsSync(refPath)) {
-        this._referenceWave = this._loadWav(refPath);
-        console.log(`[TtsEngine] Reference voice loaded (${this._referenceWave.sampleRate}Hz, ${(this._referenceWave.samples.length / this._referenceWave.sampleRate).toFixed(1)}s)`);
-      } else {
-        console.warn('[TtsEngine] reference-voice.wav not found, voice cloning disabled');
-      }
-
-      this._available = true;
-      console.log('[TtsEngine] PocketTTS initialized successfully');
-    } catch (err) {
-      console.warn('[TtsEngine] Failed to initialize PocketTTS:', err.message);
-      this._available = false;
-    }
   }
 
   _resolveModelDir() {
     const checkFile = 'lm_main.int8.onnx';
 
-    // Packaged app: resources are in process.resourcesPath
     if (process.resourcesPath) {
       const packagedPath = path.join(process.resourcesPath, 'tts-model');
-      if (fs.existsSync(path.join(packagedPath, checkFile))) {
-        return packagedPath;
-      }
+      if (fs.existsSync(path.join(packagedPath, checkFile))) return packagedPath;
     }
 
-    // Development: resources are relative to project root
     const devPath = path.join(__dirname, '..', '..', 'resources', 'tts-model');
-    if (fs.existsSync(path.join(devPath, checkFile))) {
-      return devPath;
-    }
+    if (fs.existsSync(path.join(devPath, checkFile))) return devPath;
 
     return null;
   }
 
-  /**
-   * Load a WAV file manually to avoid sherpa-onnx readWave external buffer issues.
-   * Supports 16-bit PCM WAV files.
-   */
-  _loadWav(filePath) {
-    const buffer = fs.readFileSync(filePath);
-    // Parse WAV header
-    const riff = buffer.toString('ascii', 0, 4);
-    if (riff !== 'RIFF') throw new Error('Not a valid WAV file');
+  _init() {
+    try {
+      this._modelDir = this._resolveModelDir();
+      if (!this._modelDir) {
+        console.warn('[TtsEngine] Model files not found, PocketTTS unavailable');
+        return;
+      }
 
-    const numChannels = buffer.readUInt16LE(22);
-    const sampleRate = buffer.readUInt32LE(24);
-    const bitsPerSample = buffer.readUInt16LE(34);
+      // Worker must run from unpacked path in production (asar can't run workers)
+      let workerPath = path.join(__dirname, 'tts-worker.js');
+      workerPath = workerPath.replace('app.asar', 'app.asar.unpacked');
+      this._worker = new Worker(workerPath, {
+        workerData: { modelDir: this._modelDir },
+      });
 
-    // Find data chunk
-    let dataOffset = 36;
-    while (dataOffset < buffer.length - 8) {
-      const chunkId = buffer.toString('ascii', dataOffset, dataOffset + 4);
-      const chunkSize = buffer.readUInt32LE(dataOffset + 4);
-      if (chunkId === 'data') {
-        dataOffset += 8;
-        const numSamples = Math.floor(chunkSize / (bitsPerSample / 8) / numChannels);
-        const samples = new Float32Array(numSamples);
-
-        if (bitsPerSample === 16) {
-          for (let i = 0; i < numSamples; i++) {
-            const offset = dataOffset + i * numChannels * 2;
-            samples[i] = buffer.readInt16LE(offset) / 32768.0;
-          }
-        } else if (bitsPerSample === 32) {
-          for (let i = 0; i < numSamples; i++) {
-            const offset = dataOffset + i * numChannels * 4;
-            samples[i] = buffer.readFloatLE(offset);
+      this._worker.on('message', (msg) => {
+        const pending = this._pendingRequests.get(msg.id);
+        if (pending) {
+          this._pendingRequests.delete(msg.id);
+          if (msg.error) {
+            pending.reject(new Error(msg.error));
+          } else if (msg.available !== undefined) {
+            pending.resolve(msg.available);
+          } else if (msg.warmedUp) {
+            pending.resolve(true);
+          } else {
+            pending.resolve({
+              samples: new Float32Array(msg.samples),
+              sampleRate: msg.sampleRate,
+              duration: msg.duration,
+            });
           }
         }
+      });
 
-        return { samples, sampleRate };
-      }
-      dataOffset += 8 + chunkSize;
+      this._worker.on('error', (err) => {
+        console.error('[TtsEngine] Worker error:', err.message);
+        // Reject all pending requests
+        for (const [id, pending] of this._pendingRequests) {
+          pending.reject(err);
+        }
+        this._pendingRequests.clear();
+      });
+
+      this._worker.on('exit', (code) => {
+        if (code !== 0) {
+          console.warn(`[TtsEngine] Worker exited with code ${code}`);
+        }
+        this._available = false;
+      });
+
+      this._available = true;
+      console.log('[TtsEngine] Worker thread started');
+    } catch (err) {
+      console.warn('[TtsEngine] Failed to start worker:', err.message);
+      this._available = false;
     }
-    throw new Error('WAV data chunk not found');
   }
 
   isAvailable() {
@@ -136,133 +101,99 @@ class TtsEngine {
   }
 
   /**
-   * Generate speech audio from text using voice cloning.
-   * @param {string} text - Text to synthesize
-   * @param {number} [speed=1.0] - Speech speed
-   * @returns {{ samples: Float32Array, sampleRate: number }} PCM audio data
+   * Cache key: normalized text + speed
    */
-  generate(text, speed = 1.0) {
-    if (!this._available || !this._tts) {
+  _cacheKey(text, speed) {
+    return `${speed}:${text}`;
+  }
+
+  /**
+   * LRU cache get — moves accessed entry to end (most recent)
+   */
+  _cacheGet(key) {
+    if (!this._cache.has(key)) return null;
+    const value = this._cache.get(key);
+    // Move to end (most recently used)
+    this._cache.delete(key);
+    this._cache.set(key, value);
+    return value;
+  }
+
+  /**
+   * LRU cache set — evicts oldest entry if at capacity
+   */
+  _cacheSet(key, value) {
+    if (this._cache.has(key)) {
+      this._cache.delete(key);
+    } else if (this._cache.size >= CACHE_MAX) {
+      // Delete oldest entry (first key)
+      const oldestKey = this._cache.keys().next().value;
+      this._cache.delete(oldestKey);
+    }
+    this._cache.set(key, value);
+  }
+
+  /**
+   * Generate speech audio from text (non-blocking, returns a Promise).
+   * Returns cached result instantly if available.
+   */
+  async generate(text, speed = 1.0) {
+    if (!this._available || !this._worker) {
       throw new Error('TTS engine not available');
     }
 
-    // Normalize dino-style text for TTS (elongated vowels confuse neural models)
-    // "Weeelcome" → "Welcome", "Ohhh" → "Oh", "Heeey" → "Hey"
-    let processed = text.replace(/(.)\1{2,}/g, '$1$1');          // 3+ repeats → 2
-    processed = processed.replace(/([aeiouAEIOU])\1+/g, '$1');   // Repeated vowels → 1
-    processed = processed.replace(/\b([Hh])y\b/g, '$1ey');       // Hy → Hey
-    // Restore words with natural double vowels (broken by vowel reduction above)
-    processed = processed.replace(/\b([Ll])ok/g, '$1ook');        // lok → look
-    processed = processed.replace(/\b([Ss])e\b/g, '$1ee');        // se → see
-    processed = processed.replace(/\b([Kk])ep\b/g, '$1eep');      // kep → keep
-    processed = processed.replace(/\b([Gg])od\b/g, '$1ood');      // god → good
-    processed = processed.replace(/\b([Ss])on\b/g, '$1oon');      // son → soon
-    processed = processed.replace(/\b([Tt])hre\b/g, '$1hree');    // thre → three
-    // Convert ".." pauses to commas for natural speech
-    processed = processed.replace(/\.\./g, ',');
-    // Collapse multiple spaces
-    processed = processed.replace(/\s{2,}/g, ' ').trim();
-
-    const genConfig = {};
-
-    if (this._referenceWave) {
-      genConfig.speed = speed;
-      genConfig.referenceAudio = this._referenceWave.samples;
-      genConfig.referenceSampleRate = this._referenceWave.sampleRate;
-      genConfig.numSteps = 20;
-      genConfig.extra = { max_reference_audio_len: 12 };
+    // Check cache first
+    const key = this._cacheKey(text, speed);
+    const cached = this._cacheGet(key);
+    if (cached) {
+      return {
+        samples: new Float32Array(cached.samples), // Copy so caller can transfer
+        sampleRate: cached.sampleRate,
+        duration: cached.duration,
+      };
     }
 
-    const generationConfig = new this._sherpa.GenerationConfig(genConfig);
-
-    const audio = this._tts.generate({
-      text: processed,
-      enableExternalBuffer: false,
-      generationConfig,
-    });
-
-    // Use tts.sampleRate (reliable) instead of audio.sampleRate (returns garbage
-    // values with PocketTTS in sherpa-onnx-node)
-    const samples = this._normalize(audio.samples);
-    return {
-      samples,
-      sampleRate: this._tts.sampleRate,
-    };
-  }
-
-  /**
-   * Normalize audio to a target peak level and trim trailing silence.
-   * PocketTTS output varies in volume and often has trailing silence.
-   */
-  _normalize(samples, targetPeak = 0.85) {
-    // Trim trailing silence (RMS below threshold in 50ms windows)
-    const sampleRate = this._tts.sampleRate;
-    const windowSize = Math.floor(sampleRate * 0.05);
-    const silenceThreshold = 0.02;
-    let trimEnd = samples.length;
-
-    // Cap at 10 seconds max — PocketTTS can produce excessive output
-    const maxSamples = sampleRate * 10;
-    if (trimEnd > maxSamples) trimEnd = maxSamples;
-
-    for (let i = trimEnd - windowSize; i >= 0; i -= windowSize) {
-      let sum = 0;
-      const end = Math.min(i + windowSize, trimEnd);
-      for (let j = i; j < end; j++) {
-        sum += samples[j] * samples[j];
-      }
-      if (Math.sqrt(sum / (end - i)) > silenceThreshold) {
-        // Add 100ms of padding after last speech
-        trimEnd = Math.min(trimEnd, i + windowSize + Math.floor(sampleRate * 0.1));
-        break;
-      }
-    }
-
-    const trimmed = trimEnd < samples.length ? samples.slice(0, trimEnd) : samples;
-
-    // Peak-normalize to target level (handles both quiet and clipping audio)
-    let maxAbs = 0;
-    for (let i = 0; i < trimmed.length; i++) {
-      const abs = Math.abs(trimmed[i]);
-      if (abs > maxAbs) maxAbs = abs;
-    }
-    if (maxAbs < 0.001) return trimmed; // Silence, don't amplify noise
-
-    const gain = targetPeak / maxAbs;
-    // Skip if already within 10% of target
-    if (gain > 0.9 && gain < 1.1) return trimmed;
-
-    const normalized = new Float32Array(trimmed.length);
-    for (let i = 0; i < trimmed.length; i++) {
-      normalized[i] = trimmed[i] * gain;
-    }
-    return normalized;
-  }
-
-  /**
-   * Warm up the engine with a short generation to reduce first-call latency.
-   */
-  warmup() {
-    if (!this._available) return;
-    try {
-      const genConfig = {};
-      if (this._referenceWave) {
-        genConfig.speed = 1.0;
-        genConfig.referenceAudio = this._referenceWave.samples;
-        genConfig.referenceSampleRate = this._referenceWave.sampleRate;
-        genConfig.numSteps = 5;
-        genConfig.extra = { max_reference_audio_len: 12 };
-      }
-      const generationConfig = new this._sherpa.GenerationConfig(genConfig);
-      this._tts.generate({
-        text: 'Hello.',
-        enableExternalBuffer: false,
-        generationConfig,
+    // Send to worker thread
+    const id = this._nextId++;
+    return new Promise((resolve, reject) => {
+      this._pendingRequests.set(id, {
+        resolve: (result) => {
+          // Store in cache (keep a copy since samples.buffer gets transferred)
+          this._cacheSet(key, {
+            samples: new Float32Array(result.samples),
+            sampleRate: result.sampleRate,
+            duration: result.duration,
+          });
+          resolve(result);
+        },
+        reject,
       });
-      console.log('[TtsEngine] Warmup complete');
-    } catch (err) {
-      console.warn('[TtsEngine] Warmup failed:', err.message);
+      this._worker.postMessage({ type: 'generate', id, text, speed });
+    });
+  }
+
+  /**
+   * Warm up the engine with a short generation.
+   */
+  async warmup() {
+    if (!this._available || !this._worker) return;
+    const id = this._nextId++;
+    return new Promise((resolve) => {
+      this._pendingRequests.set(id, { resolve, reject: () => resolve(false) });
+      this._worker.postMessage({ type: 'warmup', id });
+    });
+  }
+
+  /**
+   * Clean up worker on shutdown
+   */
+  destroy() {
+    if (this._worker) {
+      this._worker.terminate();
+      this._worker = null;
     }
+    this._cache.clear();
+    this._pendingRequests.clear();
   }
 }
 

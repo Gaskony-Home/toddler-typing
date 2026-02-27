@@ -51,18 +51,18 @@ app.whenReady().then(() => {
   // Initialize PocketTTS voice cloning engine
   ttsEngine = new TtsEngine();
 
-  // TTS IPC handlers
+  // TTS IPC handlers (generate() is async — runs in worker thread)
   ipcMain.handle('tts-speak', async (_event, { text, speed }) => {
     if (!ttsEngine || !ttsEngine.isAvailable()) {
       return { available: false };
     }
     try {
-      const { samples, sampleRate } = ttsEngine.generate(text, speed);
+      const { samples, sampleRate, duration } = await ttsEngine.generate(text, speed);
       return {
         available: true,
         samples: samples.buffer,
         sampleRate,
-        duration: samples.length / sampleRate,
+        duration,
       };
     } catch (err) {
       console.error('[TTS] Generate failed:', err.message);
@@ -124,5 +124,8 @@ app.on('window-all-closed', () => {
 app.on('will-quit', () => {
   if (keyboardLocker) {
     keyboardLocker.cleanup();
+  }
+  if (ttsEngine) {
+    ttsEngine.destroy();
   }
 });
