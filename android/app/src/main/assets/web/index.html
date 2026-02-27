@@ -3,14 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self';
+        style-src 'self' 'unsafe-inline';
+        font-src 'self' data:;
+        img-src 'self' data: blob:;
+        connect-src 'self';
+        frame-ancestors 'none';
+        base-uri 'self';
+        form-action 'none';
+    ">
+    <!-- Additional Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta name="referrer" content="no-referrer">
     <title>Toddler Typing</title>
 
-    <!-- Bootstrap 5.3 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5.3 CSS (local) -->
+    <link href="libs/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons (local) -->
+    <link rel="stylesheet" href="libs/bootstrap-icons/font/bootstrap-icons.min.css">
+    <!-- Nunito Font (local) -->
+    <link href="libs/fonts/nunito/nunito.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/custom.css">
 </head>
@@ -18,6 +33,14 @@
     <!-- Header with controls -->
     <header class="page-header">
         <div class="header-controls">
+            <!-- Check for Updates (always visible) -->
+            <button id="checkUpdateBtn" class="btn-icon btn-check-update" title="Check for Updates">
+                <i class="bi bi-arrow-repeat"></i>
+            </button>
+            <!-- Update Available (hidden by default) -->
+            <button id="updateBtn" class="btn-icon btn-update" title="Update Available" style="display: none;">
+                <i class="bi bi-download"></i>
+            </button>
             <!-- Mute Toggle -->
             <button id="muteToggle" class="btn-icon" title="Mute/Unmute">
                 <i class="bi bi-volume-up-fill"></i>
@@ -42,63 +65,86 @@
         <div id="mainMenu" class="menu-wrapper">
             <h1 class="menu-title text-gradient">Let's Play!</h1>
 
-            <!-- 3x2 Grid -->
+            <!-- 3x3 Grid with Row Labels -->
             <div class="activity-grid">
-                <!-- Letters & Numbers -->
-                <button class="activity-card" onclick="startActivity('letters_numbers')">
-                    <i class="bi bi-alphabet card-icon"></i>
-                    <h3 class="card-title">Letters & Numbers</h3>
-                    <p class="card-subtitle">Learn ABC and 123</p>
+                <!-- Row 1: Simple Learning -->
+                <div class="row-label">Simple Learning</div>
+
+                <button class="activity-card card-typing" data-activity="typing_game">
+                    <i class="bi bi-keyboard card-icon"></i>
+                    <h3 class="card-title">Typing Game</h3>
+                    <p class="card-subtitle">Learn ABC & 123 with Typing</p>
                 </button>
 
-                <!-- Drawing -->
-                <button class="activity-card card-drawing" onclick="startActivity('drawing')">
-                    <i class="bi bi-brush card-icon"></i>
-                    <h3 class="card-title">Drawing</h3>
-                    <p class="card-subtitle">Create beautiful art</p>
-                </button>
-
-                <!-- Colors & Shapes -->
-                <button class="activity-card card-shapes" onclick="startActivity('colors_shapes')">
+                <button class="activity-card card-shapes" data-activity="colors_shapes">
                     <i class="bi bi-triangle card-icon"></i>
-                    <h3 class="card-title">Colors & Shapes</h3>
-                    <p class="card-subtitle">Discover colors and shapes</p>
+                    <h3 class="card-title">Colours & Shapes</h3>
+                    <p class="card-subtitle">Discover colours and shapes</p>
                 </button>
 
-                <!-- Dot to Dot -->
-                <button class="activity-card card-dot2dot" onclick="startActivity('dot2dot')">
-                    <i class="bi bi-diagram-3 card-icon"></i>
-                    <h3 class="card-title">Dot to Dot</h3>
-                    <p class="card-subtitle">Connect the dots</p>
-                </button>
-
-                <!-- Sounds -->
-                <button class="activity-card card-sounds" onclick="startActivity('sounds')">
+                <button class="activity-card card-sounds" data-activity="sounds">
                     <i class="bi bi-megaphone card-icon"></i>
                     <h3 class="card-title">Sounds</h3>
                     <p class="card-subtitle">Learn letter sounds</p>
                 </button>
 
-                <!-- Coloring -->
-                <button class="activity-card card-coloring" onclick="startActivity('coloring')">
-                    <i class="bi bi-palette card-icon"></i>
-                    <h3 class="card-title">Coloring</h3>
-                    <p class="card-subtitle">Paint and color pictures</p>
+                <!-- Row 2: Artistic Fun -->
+                <div class="row-label">Artistic Fun</div>
+
+                <button class="activity-card card-drawing" data-activity="drawing">
+                    <i class="bi bi-brush card-icon"></i>
+                    <h3 class="card-title">Drawing</h3>
+                    <p class="card-subtitle">Create beautiful art</p>
                 </button>
 
-                <!-- Typing Game -->
-                <button class="activity-card card-typing" onclick="startActivity('typing_game')">
-                    <i class="bi bi-keyboard card-icon"></i>
-                    <h3 class="card-title">Typing Game</h3>
-                    <p class="card-subtitle">Practice typing skills</p>
+                <button class="activity-card card-coloring" data-activity="coloring">
+                    <i class="bi bi-palette card-icon"></i>
+                    <h3 class="card-title">Colouring</h3>
+                    <p class="card-subtitle">Paint and colour pictures</p>
+                </button>
+
+                <button class="activity-card card-dot2dot" data-activity="dot2dot">
+                    <i class="bi bi-diagram-3 card-icon"></i>
+                    <h3 class="card-title">Dot to Dot</h3>
+                    <p class="card-subtitle">Connect the dots</p>
+                </button>
+
+                <!-- Row 3: Problem Solving -->
+                <div class="row-label">Problem Solving</div>
+
+                <button class="activity-card card-memory" data-activity="memory_game">
+                    <i class="bi bi-grid-3x3-gap card-icon"></i>
+                    <h3 class="card-title">Memory Game</h3>
+                    <p class="card-subtitle">Match the pairs</p>
+                </button>
+
+                <button class="activity-card card-jigsaw" data-activity="jigsaw">
+                    <i class="bi bi-puzzle card-icon"></i>
+                    <h3 class="card-title">Jigsaw Puzzles</h3>
+                    <p class="card-subtitle">Piece it together</p>
+                </button>
+
+                <button class="activity-card card-sorting" data-activity="sorting">
+                    <i class="bi bi-funnel card-icon"></i>
+                    <h3 class="card-title">Sorting Game</h3>
+                    <p class="card-subtitle">Sort into groups</p>
+                </button>
+
+                <!-- Row 4: My Progress -->
+                <div class="row-label">My Progress</div>
+
+                <button class="activity-card card-trophy" data-activity="trophy_room" style="grid-column: 1 / -1;">
+                    <i class="bi bi-trophy-fill card-icon"></i>
+                    <h3 class="card-title">Trophy Room</h3>
+                    <p class="card-subtitle">See your stars, stickers & outfits</p>
                 </button>
             </div>
         </div>
 
         <!-- Activity Screens (hidden by default) -->
         <div id="activityScreen" class="activity-screen-wrapper">
-            <button class="btn-back" onclick="returnToMenu()">
-                <i class="bi bi-arrow-left"></i> Back to Menu
+            <button class="btn-back" id="btnBack" title="Back to Menu">
+                <i class="bi bi-house-fill"></i>
             </button>
             <div id="activityContent">
                 <!-- Activity content will be loaded here -->
@@ -111,24 +157,49 @@
         <small id="versionLabel">v...</small>
     </footer>
 
-    <!-- Bootstrap 5.3 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Three.js for 3D rendering -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
+    <!-- Update Confirmation Modal -->
+    <div class="modal fade" id="updateModal" tabindex="-1" aria-labelledby="updateModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="updateModalLabel">Update Available</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="updateModalMessage">A new version is available. Download and restart to install?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Not Now</button>
+                    <button type="button" class="btn btn-primary" id="updateNowBtn">
+                        <i class="bi bi-download"></i> Update Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5.3 JS Bundle (local) -->
+    <script src="libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- Three.js for 3D rendering (local) -->
+    <script src="libs/three/three.min.js"></script>
+    <script src="libs/three/GLTFLoader.js"></script>
     <!-- API Bridge (Electron / Android) -->
     <script src="js/api-bridge.js"></script>
     <!-- Dinosaur Voice Phrases & TTS -->
     <script src="js/dino-phrases.js"></script>
     <script src="js/dino-voice.js"></script>
+    <!-- Rewards system -->
+    <script src="js/rewards.js"></script>
     <!-- Activity modules -->
-    <script src="js/activities/letters_numbers.js"></script>
     <script src="js/activities/drawing.js"></script>
     <script src="js/activities/colors_shapes.js"></script>
     <script src="js/activities/dot2dot.js"></script>
     <script src="js/activities/sounds.js"></script>
     <script src="js/activities/coloring.js"></script>
     <script src="js/activities/typing_game.js"></script>
+    <script src="js/activities/memory_game.js"></script>
+    <script src="js/activities/jigsaw.js"></script>
+    <script src="js/activities/sorting.js"></script>
     <!-- Character Managers (3D primary, 2D fallback) -->
     <script src="js/character_manager.js"></script>
     <script src="js/character-setup.js"></script>

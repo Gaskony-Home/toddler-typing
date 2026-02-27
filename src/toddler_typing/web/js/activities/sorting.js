@@ -654,6 +654,11 @@ class SortingActivity {
             basketEl.addEventListener('click', () => this.handleBasketClick(basketEl));
         });
 
+        // Voice all basket names so toddlers who can't read know what each basket is
+        const basketNames = baskets.map(b => b.name).join('.. and.. ');
+        const introText = `Sort into.. ${basketNames}`;
+        AppAPI.call('speak', introText);
+
         // Update score display
         this.updateScore();
     }

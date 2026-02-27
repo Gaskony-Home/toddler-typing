@@ -15,8 +15,8 @@ class TypingGameActivity {
         this.totalStars = 0;
         this.currentLevel = 1;
         this.activityStars = 0;
-        this.stage2Unlocked = false;
-        this.stage3Unlocked = false;
+        this.stage2Unlocked = true;
+        this.stage3Unlocked = true;
         this.isActive = false;
         this.keydownHandler = null;
         this.idleTimer = null;

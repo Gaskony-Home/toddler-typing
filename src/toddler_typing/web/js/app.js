@@ -862,13 +862,11 @@ class ActivityManager {
                     <button class="stage-tab active" data-stage="1">
                         <i class="bi bi-alphabet"></i> Letters
                     </button>
-                    <button class="stage-tab locked" data-stage="2">
+                    <button class="stage-tab" data-stage="2">
                         <i class="bi bi-123"></i> Numbers
-                        <span class="lock-overlay"><i class="bi bi-lock-fill"></i></span>
                     </button>
-                    <button class="stage-tab locked" data-stage="3">
+                    <button class="stage-tab" data-stage="3">
                         <i class="bi bi-fonts"></i> Words
-                        <span class="lock-overlay"><i class="bi bi-lock-fill"></i></span>
                     </button>
                 </div>
 
@@ -978,14 +976,26 @@ class ActivityManager {
                 <!-- Progress Display -->
                 <div id="jigsawProgressDisplay" class="progress-display-top"></div>
 
-                <!-- Title -->
-                <h2 class="display-5 fw-bold mb-2" id="jigsawTitle">Jigsaw Puzzle</h2>
+                <!-- Title with Navigation -->
+                <div class="jigsaw-header">
+                    <button class="btn btn-primary jigsaw-nav-btn" id="prevScene">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <h2 class="display-5 fw-bold mb-0" id="jigsawTitle">Jigsaw Puzzle</h2>
+                    <button class="btn btn-primary jigsaw-nav-btn" id="nextScene">
+                        <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
 
                 <!-- Difficulty Selector -->
-                <div class="difficulty-selector" id="jigsawDifficulty">
-                    <button class="difficulty-btn active" data-difficulty="easy">Easy (4 pcs)</button>
-                    <button class="difficulty-btn" data-difficulty="medium">Medium (6 pcs)</button>
-                    <button class="difficulty-btn" data-difficulty="hard">Hard (9 pcs)</button>
+                <div class="difficulty-selector jigsaw-difficulty-scroll" id="jigsawDifficulty">
+                    <button class="difficulty-btn active" data-difficulty="easy">Easy (4)</button>
+                    <button class="difficulty-btn" data-difficulty="medium">Medium (6)</button>
+                    <button class="difficulty-btn" data-difficulty="hard">Hard (9)</button>
+                    <button class="difficulty-btn" data-difficulty="harder">Harder (12)</button>
+                    <button class="difficulty-btn" data-difficulty="tough">Tough (16)</button>
+                    <button class="difficulty-btn" data-difficulty="expert">Expert (20)</button>
+                    <button class="difficulty-btn" data-difficulty="master">Master (30)</button>
                 </div>
 
                 <!-- Board Area (canvas with ghost image + grid) -->
