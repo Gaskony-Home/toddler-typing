@@ -1,6 +1,6 @@
 {
   "name": "toddler-typing",
-  "version": "1.7.2",
+  "version": "1.7.3",
   "description": "A child-friendly educational app for learning letters, numbers, colors, and shapes",
   "main": "electron/main.js",
   "repository": "github:Gaskony-Home/toddler-typing",
