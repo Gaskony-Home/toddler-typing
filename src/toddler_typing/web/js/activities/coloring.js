@@ -23,6 +23,9 @@ class ColoringActivity {
         this.backgroundImage = null;
         this._resizeHandler = () => this.resizeCanvas();
         this._firstLoad = true;
+        this._lastEncouragementTime = 0;
+        this._encouragementInterval = null;
+        this._recentlyDrawn = false;
     }
 
     async start() {
@@ -54,6 +57,21 @@ class ColoringActivity {
         if (window.characterManager) {
             window.characterManager.playAnimation('wave', false);
         }
+
+        // Periodic coloring encouragement (every 30s of active drawing)
+        this._encouragementInterval = setInterval(() => {
+            if (this.isDrawing || this._recentlyDrawn) {
+                const now = Date.now();
+                if (now - this._lastEncouragementTime >= 30000) {
+                    this._lastEncouragementTime = now;
+                    AppAPI.call('speak', window.DinoPhrase ? window.DinoPhrase('coloring', 'encouragement') : '');
+                    if (window.characterManager) {
+                        window.characterManager.playAnimation('happy', false);
+                    }
+                }
+                this._recentlyDrawn = false;
+            }
+        }, 5000);
     }
 
     resizeCanvas() {
@@ -347,6 +365,7 @@ class ColoringActivity {
 
         this.lastX = currentX;
         this.lastY = currentY;
+        this._recentlyDrawn = true;
     }
 
     stopDrawing() {
@@ -359,5 +378,9 @@ class ColoringActivity {
             document.removeEventListener('keydown', this.keyPressHandler);
         }
         window.removeEventListener('resize', this._resizeHandler);
+        if (this._encouragementInterval) {
+            clearInterval(this._encouragementInterval);
+            this._encouragementInterval = null;
+        }
     }
 }

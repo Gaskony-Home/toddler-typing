@@ -189,6 +189,11 @@
         "Ohhh.. sorting time! Put each item in the right basket!",
         "Weeelcome to sorting! Look at the item.. then tap the right group!",
         "Heeey.. let's sort things! Which basket does it belong in?"
+      ],
+      trophy_room: [
+        "Wooow.. look at all your trophies! You've been sooo busy!",
+        "Ohhh.. your trophy room! Sooo many amazing rewards!",
+        "Heeey.. let's see what you've earned! Increeedible collection!"
       ]
     },
 
@@ -279,6 +284,11 @@
         "Ohhh.. almost! Try the other group!",
         "Noope.. that doesn't go there.. try again!",
         "Not quite.. look at the baskets again!"
+      ],
+      round_complete: [
+        "Wooow.. you sorted them all! Amaazing job!",
+        "Alll done! Every item in the right basket!",
+        "Increeedible sorting! Let's do another round!"
       ]
     },
 
@@ -368,6 +378,12 @@
         "Ohhh.. let's start fresh on this one!",
         "Clean canvas.. color it again!",
         "Starting over.. you can do it different this time!"
+      ],
+      encouragement: [
+        "Wooow.. such pretty colors!",
+        "Ohhh.. that looks sooo beautiful!",
+        "Keeeep coloring.. you're an artist!",
+        "Sooo creative! I love the colors you picked!"
       ]
     },
 
@@ -383,6 +399,17 @@
         "Wooow.. great connecting! Saved!",
         "Looook what you made! Saved!",
         "Peerfect! Picture saved!"
+      ],
+      clear: [
+        "Ohhh.. fresh dots! Connect them again!",
+        "Clean start! Follow the numbers!",
+        "Alll clear.. let's try again!"
+      ],
+      encouragement: [
+        "Wooow.. great connecting!",
+        "Ohhh.. you're following those dots sooo well!",
+        "Keeeep going.. it's looking amaazing!",
+        "Sooo good! The picture is coming together!"
       ]
     },
 

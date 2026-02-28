@@ -19,7 +19,6 @@ class TypingGameActivity {
         this.stage3Unlocked = true;
         this.isActive = false;
         this.keydownHandler = null;
-        this.idleTimer = null;
         this.processing = false;
     }
 
@@ -51,16 +50,11 @@ class TypingGameActivity {
         this.updateProgressDisplay();
         this.updateStageUI();
 
-        // Greet
-        if (window.DinoVoice && window.DinoVoice.speakPhrase) {
-            window.DinoVoice.speakPhrase('greeting', null, null, true);
-        }
-
         if (window.characterManager) {
             window.characterManager.playAnimation('wave', false);
         }
 
-        // Load first challenge after a short delay for the greeting
+        // Load first challenge after a short delay for the welcome
         setTimeout(() => this.nextChallenge(), 1200);
     }
 
@@ -71,12 +65,6 @@ class TypingGameActivity {
         if (this.keydownHandler) {
             document.removeEventListener('keydown', this.keydownHandler);
             this.keydownHandler = null;
-        }
-
-        this.clearIdleTimer();
-
-        if (window.DinoVoice && window.DinoVoice.speakPhrase) {
-            window.DinoVoice.speakPhrase('farewell');
         }
     }
 
@@ -124,8 +112,6 @@ class TypingGameActivity {
 
     async processKeyInput(key) {
         if (!this.isActive || this.processing) return;
-
-        this.resetIdleTimer();
 
         if (this.currentType === 'word') {
             // Word mode: check letter by letter
@@ -251,7 +237,6 @@ class TypingGameActivity {
 
             this.updateTargetDisplay();
             this.highlightTargetKey();
-            this.resetIdleTimer();
 
             // Speak instruction
             if (window.DinoVoice && window.DinoVoice.speakPhrase) {
@@ -432,21 +417,6 @@ class TypingGameActivity {
         }
     }
 
-    resetIdleTimer() {
-        this.clearIdleTimer();
-        this.idleTimer = setTimeout(() => {
-            if (this.isActive && window.DinoVoice && window.DinoVoice.speakPhrase) {
-                window.DinoVoice.speakPhrase('idle_nudge');
-            }
-        }, 15000);
-    }
-
-    clearIdleTimer() {
-        if (this.idleTimer) {
-            clearTimeout(this.idleTimer);
-            this.idleTimer = null;
-        }
-    }
 }
 
 window.TypingGameActivity = TypingGameActivity;

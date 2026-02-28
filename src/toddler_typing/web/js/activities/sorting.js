@@ -668,8 +668,10 @@ class SortingActivity {
         if (!itemContainer) return;
 
         if (this.itemQueue.length === 0) {
-            // Round complete, restart with fresh items
-            this.startNewRound();
+            // Round complete — speak celebration and restart after delay
+            const completeText = window.DinoPhrase ? window.DinoPhrase('sorting', 'round_complete') : '';
+            if (completeText) AppAPI.call('speak', completeText);
+            setTimeout(() => this.startNewRound(), 2000);
             return;
         }
 
@@ -722,6 +724,15 @@ class SortingActivity {
 
             const correctText = window.DinoPhrase ? window.DinoPhrase('sorting', 'correct') : 'Right!';
             AppAPI.call('speak', correctText);
+
+            // Streak milestone speech
+            if (this.streak === 10) {
+                setTimeout(() => AppAPI.call('speak', window.DinoPhrase ? window.DinoPhrase('streak', '10') : ''), 500);
+            } else if (this.streak === 5) {
+                setTimeout(() => AppAPI.call('speak', window.DinoPhrase ? window.DinoPhrase('streak', '5') : ''), 500);
+            } else if (this.streak === 3) {
+                setTimeout(() => AppAPI.call('speak', window.DinoPhrase ? window.DinoPhrase('streak', '3') : ''), 500);
+            }
 
             this.updateScore();
 

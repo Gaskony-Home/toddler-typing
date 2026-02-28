@@ -445,9 +445,18 @@ class NavigationManager {
  * Activity Manager
  */
 class ActivityManager {
+    // Activities eligible for idle nudge (interactive/quiz activities)
+    static IDLE_NUDGE_ACTIVITIES = new Set([
+        'typing_game', 'colors_shapes', 'sounds', 'sorting', 'memory_game', 'jigsaw'
+    ]);
+
     constructor(navigation) {
         this.navigation = navigation;
         this.currentActivityInstance = null;
+        this._idleTimer = null;
+        this._idleTimeout = 20000; // 20 seconds
+        this._idleResetHandler = null;
+        this._currentActivityName = null;
     }
 
     /**
@@ -535,6 +544,7 @@ class ActivityManager {
             await this.stop();
         }
 
+        this._currentActivityName = activityName;
         await AppAPI.startActivity(activityName);
 
         // Show activity screen
@@ -550,10 +560,17 @@ class ActivityManager {
         if (window.DinoVoice && !AppState.isMuted) {
             window.DinoVoice.speakPhrase('activity_welcome', activityName, null, true);
         }
+
+        // Start global idle nudge for eligible activities
+        this._startIdleNudge(activityName);
     }
 
     async stop() {
         console.log('Stopping current activity');
+
+        // Clear idle nudge
+        this._stopIdleNudge();
+        this._currentActivityName = null;
 
         // Stop activity-specific logic
         if (this.currentActivityInstance && this.currentActivityInstance.stop) {
@@ -572,9 +589,41 @@ class ActivityManager {
             window.rewardsManager.renderHomeStarDisplay();
         }
 
-        // Dino welcomes back to the menu
+        // Dino says farewell (interrupts any current speech), then queues menu welcome
         if (window.DinoVoice && !AppState.isMuted) {
-            window.DinoVoice.speakPhrase('menu_welcome', null, null, true);
+            window.DinoVoice.speakPhrase('farewell', null, null, true);
+            window.DinoVoice.speakPhrase('menu_welcome');
+        }
+    }
+
+    _startIdleNudge(activityName) {
+        this._stopIdleNudge();
+        if (!ActivityManager.IDLE_NUDGE_ACTIVITIES.has(activityName)) return;
+
+        this._idleResetHandler = () => this._resetIdleTimer();
+        document.addEventListener('click', this._idleResetHandler);
+        document.addEventListener('keydown', this._idleResetHandler);
+        this._resetIdleTimer();
+    }
+
+    _resetIdleTimer() {
+        if (this._idleTimer) clearTimeout(this._idleTimer);
+        this._idleTimer = setTimeout(() => {
+            if (this._currentActivityName && window.DinoVoice && !AppState.isMuted) {
+                window.DinoVoice.speakPhrase('idle_nudge');
+            }
+        }, this._idleTimeout);
+    }
+
+    _stopIdleNudge() {
+        if (this._idleTimer) {
+            clearTimeout(this._idleTimer);
+            this._idleTimer = null;
+        }
+        if (this._idleResetHandler) {
+            document.removeEventListener('click', this._idleResetHandler);
+            document.removeEventListener('keydown', this._idleResetHandler);
+            this._idleResetHandler = null;
         }
     }
 

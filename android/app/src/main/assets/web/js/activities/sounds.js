@@ -28,6 +28,7 @@ class SoundsActivity {
         this.processing = false;
         this.rewards = null;
         this.roundCount = 0;
+        this.attempts = 0;
     }
 
     async start() {
@@ -49,20 +50,17 @@ class SoundsActivity {
             hearBtn.addEventListener('click', () => this.speakSound());
         }
 
-        // Character wave
+        // Character wave (welcome voice handled by ActivityManager)
         if (window.characterManager) {
             window.characterManager.playAnimation('wave', false);
         }
-
-        // Speak welcome
-        const welcomeText = window.DinoPhrase ? window.DinoPhrase('sounds', 'welcome') : "Let's learn letter sounds!";
-        AppAPI.call('speak', welcomeText);
 
         // Start first round
         this.nextRound();
     }
 
     nextRound() {
+        this.attempts = 0;
         // Pick a random sound
         this.currentIndex = Math.floor(Math.random() * this.sounds.length);
         this.generateQuizRound();
@@ -174,7 +172,8 @@ class SoundsActivity {
                 milestones.forEach(r => this.rewards.showRewardAnimation(r));
             }
 
-            const correctText = window.DinoPhrase ? window.DinoPhrase('correct_first_try') : 'Great job!';
+            const phraseCategory = this.attempts === 0 ? 'correct_first_try' : 'correct_after_hints';
+            const correctText = window.DinoPhrase ? window.DinoPhrase(phraseCategory) : 'Great job!';
             await AppAPI.call('speak', correctText);
 
             // Next round after delay
@@ -186,6 +185,7 @@ class SoundsActivity {
         } else {
             // Wrong
             btn.classList.add('wrong');
+            this.attempts++;
 
             if (window.characterManager) {
                 window.characterManager.playAnimation('thinking', false);
