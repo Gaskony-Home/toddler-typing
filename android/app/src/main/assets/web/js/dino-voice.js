@@ -17,7 +17,7 @@
 
   const synth = window.speechSynthesis;
 
-  const DINO_PITCH = 0.6;
+  const DINO_PITCH = 0.45;
   const DINO_RATE = 0.72;
   const DINO_VOLUME = 1.0;
 
@@ -66,14 +66,13 @@
   let isSpeaking = false;   // Whether audio is currently playing
   let currentGenId = 0;     // Monotonic ID for cancellation
 
-  // Effects chain parameters — light touch since voice cloning preserves character:
-  // PocketTTS clones the reference voice directly, so we only add subtle warmth
-  const PLAYBACK_RATE = 1.0;          // No pitch shift needed (voice is already cloned)
-  const LOWPASS_FREQ = 8000;          // Very gentle high cut, keep it natural
-  const BASS_FREQ = 200;             // Subtle warmth
-  const BASS_GAIN = 1;               // +1dB gentle body
-  const REVERB_DURATION = 0.2;       // Tiny reverb for slight depth
-  const MASTER_GAIN = 0.95;          // Final volume
+  // Effects chain parameters — tuned for a noticeably deeper, richer dino voice
+  const PLAYBACK_RATE = 0.94;         // ~6% pitch drop for deeper voice
+  const LOWPASS_FREQ = 5500;          // Cut high-frequency brightness/breathiness
+  const BASS_FREQ = 150;             // Target deeper male fundamental range
+  const BASS_GAIN = 4;               // +4dB body/chest resonance
+  const REVERB_DURATION = 0.3;       // Slightly bigger reverb for depth perception
+  const MASTER_GAIN = 0.92;          // Compensate for bass boost to prevent clipping
 
   /**
    * Generate a synthetic room impulse response (no external files needed).
@@ -118,9 +117,9 @@
 
     // Dry/wet mixer: mostly dry, hint of reverb
     const dryGain = audioCtx.createGain();
-    dryGain.gain.value = 0.85;
+    dryGain.gain.value = 0.80;
     const wetGain = audioCtx.createGain();
-    wetGain.gain.value = 0.15;
+    wetGain.gain.value = 0.20;
 
     // Master gain
     const masterGain = audioCtx.createGain();
