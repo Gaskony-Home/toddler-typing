@@ -81,9 +81,19 @@ app.whenReady().then(() => {
 
   createWindow();
 
-  // Warm up TTS engine in background to reduce first-utterance latency
+  // Warm up TTS engine and pre-cache common phrases to reduce speech latency
   if (ttsEngine && ttsEngine.isAvailable()) {
-    setTimeout(() => ttsEngine.warmup(), 2000);
+    setTimeout(async () => {
+      await ttsEngine.warmup();
+      // Pre-generate common phrases in background (fills cache for instant playback)
+      const commonPhrases = [
+        'Hello!', 'Welcome back!', 'Great job!', 'Well done!',
+        'Try again!', 'You did it!', 'Awesome!', 'Nice work!'
+      ];
+      for (const phrase of commonPhrases) {
+        try { await ttsEngine.generate(phrase, 0.9); } catch (_) { break; }
+      }
+    }, 1000);
   }
 
   // Initialize auto-updater after window is created
