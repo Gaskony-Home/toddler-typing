@@ -237,10 +237,78 @@ class JigsawActivity {
             wrapper.dataset.pieceIndex = i;
             wrapper.appendChild(pieceCanvas);
 
+            // Click to select (fallback)
             wrapper.addEventListener('click', () => this.selectPiece(wrapper, i));
+
+            // Drag support (mouse)
+            wrapper.draggable = false; // We handle drag manually for better control
+            wrapper.addEventListener('mousedown', (e) => this.startDrag(e, wrapper, i));
+            // Drag support (touch)
+            wrapper.addEventListener('touchstart', (e) => this.startDrag(e, wrapper, i), { passive: false });
 
             tray.appendChild(wrapper);
         });
+    }
+
+    // =============================================
+    // Drag & Drop
+    // =============================================
+
+    startDrag(e, wrapper, pieceIndex) {
+        if (this.processing || this.gridState[pieceIndex]) return;
+
+        e.preventDefault();
+
+        const isTouch = e.type === 'touchstart';
+        const startX = isTouch ? e.touches[0].clientX : e.clientX;
+        const startY = isTouch ? e.touches[0].clientY : e.clientY;
+
+        // Create a floating clone for drag visual
+        const rect = wrapper.getBoundingClientRect();
+        const ghost = wrapper.cloneNode(true);
+        ghost.className = 'jigsaw-piece-ghost';
+        ghost.style.cssText = `
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+            width: ${rect.width}px;
+            height: ${rect.height}px;
+            opacity: 0.85;
+            transform: scale(1.15);
+            transition: none;
+        `;
+        ghost.style.left = (startX - rect.width / 2) + 'px';
+        ghost.style.top = (startY - rect.height / 2) + 'px';
+        document.body.appendChild(ghost);
+
+        wrapper.classList.add('dragging');
+        let moved = false;
+
+        const onMove = (ev) => {
+            const cx = isTouch ? ev.touches[0].clientX : ev.clientX;
+            const cy = isTouch ? ev.touches[0].clientY : ev.clientY;
+            ghost.style.left = (cx - rect.width / 2) + 'px';
+            ghost.style.top = (cy - rect.height / 2) + 'px';
+            if (Math.abs(cx - startX) > 5 || Math.abs(cy - startY) > 5) moved = true;
+        };
+
+        const onEnd = (ev) => {
+            document.removeEventListener(isTouch ? 'touchmove' : 'mousemove', onMove);
+            document.removeEventListener(isTouch ? 'touchend' : 'mouseup', onEnd);
+            ghost.remove();
+            wrapper.classList.remove('dragging');
+
+            if (!moved) return; // Let the click handler deal with taps
+
+            const cx = isTouch ? ev.changedTouches[0].clientX : ev.clientX;
+            const cy = isTouch ? ev.changedTouches[0].clientY : ev.clientY;
+
+            this.selectedPiece = pieceIndex;
+            this.tryPlaceAtPoint(cx, cy);
+        };
+
+        document.addEventListener(isTouch ? 'touchmove' : 'mousemove', onMove, { passive: false });
+        document.addEventListener(isTouch ? 'touchend' : 'mouseup', onEnd);
     }
 
     selectPiece(wrapper, pieceIndex) {
@@ -256,15 +324,23 @@ class JigsawActivity {
         wrapper.classList.add('selected');
     }
 
-    handleBoardClick(e) {
+    tryPlaceAtPoint(clientX, clientY) {
         if (this.processing || this.selectedPiece === null) return;
 
+        const boardRect = this.boardCanvas.getBoundingClientRect();
+
+        // Check if drop is on the board
+        if (clientX < boardRect.left || clientX > boardRect.right ||
+            clientY < boardRect.top || clientY > boardRect.bottom) {
+            this.selectedPiece = null;
+            return;
+        }
+
         const config = this.difficulties[this.difficulty];
-        const rect = this.boardCanvas.getBoundingClientRect();
-        const scaleX = this.boardCanvas.width / rect.width;
-        const scaleY = this.boardCanvas.height / rect.height;
-        const x = (e.clientX - rect.left) * scaleX;
-        const y = (e.clientY - rect.top) * scaleY;
+        const scaleX = this.boardCanvas.width / boardRect.width;
+        const scaleY = this.boardCanvas.height / boardRect.height;
+        const x = (clientX - boardRect.left) * scaleX;
+        const y = (clientY - boardRect.top) * scaleY;
 
         const pw = this.boardCanvas.width / config.cols;
         const ph = this.boardCanvas.height / config.rows;
@@ -274,7 +350,15 @@ class JigsawActivity {
         if (col < 0 || col >= config.cols || row < 0 || row >= config.rows) return;
 
         const targetIndex = row * config.cols + col;
+        this.attemptPlace(targetIndex, config, col, row);
+    }
 
+    handleBoardClick(e) {
+        if (this.processing || this.selectedPiece === null) return;
+        this.tryPlaceAtPoint(e.clientX, e.clientY);
+    }
+
+    attemptPlace(targetIndex, config, col, row) {
         if (this.gridState[targetIndex]) return;
 
         this.processing = true;
@@ -324,6 +408,7 @@ class JigsawActivity {
             ctx.fillRect(col * pw2, row * ph2, pw2, ph2);
             setTimeout(() => this.drawBoard(), 400);
 
+            this.selectedPiece = null;
             setTimeout(() => { this.processing = false; }, 500);
         }
     }
@@ -343,7 +428,8 @@ class JigsawActivity {
             window.characterManager.playAnimation('dance', false);
         }
 
-        const bonus = this.difficulty === 'hard' ? 3 : this.difficulty === 'medium' ? 2 : 1;
+        const difficultyBonuses = { easy: 1, medium: 2, hard: 3, harder: 4, tough: 5, expert: 6, master: 8 };
+        const bonus = difficultyBonuses[this.difficulty] || 1;
         const starResult = await AppAPI.call('award_stars', 'jigsaw', bonus);
         if (starResult && this.rewards) {
             this.rewards.playStarAnimation('jigsawStarAnimation');
@@ -355,7 +441,38 @@ class JigsawActivity {
         const completeText = window.DinoPhrase ? window.DinoPhrase('jigsaw', 'complete') : 'Puzzle complete!';
         AppAPI.call('speak', completeText);
 
-        // Don't auto-advance — let the child pick their next puzzle with nav buttons
+        // Celebration flash on the board
+        this.showCompletionCelebration();
+
+        // Auto-advance to next scene after celebration
+        setTimeout(() => {
+            this.currentSceneIndex = (this.currentSceneIndex + 1) % this.scenes.length;
+            this.startNewPuzzle();
+        }, 3000);
+    }
+
+    showCompletionCelebration() {
+        const boardArea = document.getElementById('jigsawBoardArea');
+        if (!boardArea) return;
+
+        // Show full image with celebration overlay
+        const ctx = this.boardCtx;
+        const w = this.boardCanvas.width;
+        const h = this.boardCanvas.height;
+
+        // Draw full scene (no grid lines)
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(this.sceneCanvas, 0, 0, w, h);
+
+        // Add sparkle overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'jigsaw-complete-overlay';
+        overlay.innerHTML = '<span>Complete!</span>';
+        boardArea.style.position = 'relative';
+        boardArea.appendChild(overlay);
+
+        // Remove overlay before next puzzle
+        setTimeout(() => overlay.remove(), 2800);
     }
 
     // =============================================

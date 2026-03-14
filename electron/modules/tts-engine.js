@@ -9,8 +9,8 @@ const path = require('path');
 const fs = require('fs');
 const { Worker } = require('worker_threads');
 
-// Cache up to 50 phrases (~50 * 100KB = ~5MB memory)
-const CACHE_MAX = 50;
+// Cache up to 80 phrases (~80 * 100KB = ~8MB memory)
+const CACHE_MAX = 80;
 
 class TtsEngine {
   constructor() {

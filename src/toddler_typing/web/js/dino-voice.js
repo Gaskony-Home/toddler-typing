@@ -300,9 +300,15 @@
 
   // ───── Public API ─────
 
+  let initPromise = null;
+
   function speak(text, interrupt = false) {
     if (!text || typeof text !== 'string') return;
-    if (!initialized) init();
+    if (!initialized) {
+      if (!initPromise) initPromise = init();
+      initPromise.then(() => speak(text, interrupt));
+      return;
+    }
 
     if (interrupt) {
       // Cancel everything: queue, current playback, pending generation
@@ -361,8 +367,8 @@
     if (text) speak(text, interrupt);
   }
 
-  // Auto-init
-  init();
+  // Auto-init (save promise so speak() can await it)
+  initPromise = init();
 
   // Expose globally
   window.DinoVoice = { speak, stop, init, speakPhrase };
