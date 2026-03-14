@@ -90,9 +90,9 @@ body:has(.menu-wrapper.hidden) .page-header {
     height: 100vh;
     height: 100dvh;
     display: flex;
-    align-items: center;
+    align-items: safe center;
     justify-content: center;
-    overflow: hidden;
+    overflow: auto;
     padding: 0;
 }
 
