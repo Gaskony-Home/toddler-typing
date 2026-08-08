@@ -124,6 +124,11 @@
       api[m] = noop;
     }
 
+    // get_version is string-interpolated by the caller (`v${version}`), so the
+    // generic object stub would render a literal "v[object Object]" in the footer.
+    // Return null instead and let the caller keep its placeholder.
+    api.get_version = () => Promise.resolve(null);
+
     // Even without backend, try client-side TTS
     api.speak = async (text, interrupt) => {
       if (window.DinoVoice) window.DinoVoice.speak(text, interrupt);
