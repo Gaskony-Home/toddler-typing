@@ -44,3 +44,9 @@ Dinosaur Images/
 
 # Claude Code
 .claude/
+
+# Voice-clone reference recording. A real person's voice — deliberately NOT
+# distributed. Keep your own copy here; the TTS engine clones it when present and
+# silently falls back to the model's default voice when it is absent, so builds
+# without it still work.
+resources/voice/

@@ -102,7 +102,8 @@ async function downloadModel() {
     throw new Error(`Extraction failed: missing files: ${missing.join(', ')}`);
   }
 
-  // Copy reference voice for voice cloning (tracked in git, not part of model tarball)
+  // Copy the voice-clone reference if the user has one locally. It is NOT tracked in
+  // git (a real person's voice); without it the engine uses the model default voice.
   const refSource = path.join(__dirname, '..', 'resources', 'voice', 'reference-voice.wav');
   const refDest = path.join(MODEL_DIR, 'reference-voice.wav');
   if (fs.existsSync(refSource) && !fs.existsSync(refDest)) {
